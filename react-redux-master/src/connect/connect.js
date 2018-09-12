@@ -65,7 +65,7 @@ export function createConnect({
     const initMapStateToProps = match(mapStateToProps, mapStateToPropsFactories, 'mapStateToProps')
     const initMapDispatchToProps = match(mapDispatchToProps, mapDispatchToPropsFactories, 'mapDispatchToProps')
     const initMergeProps = match(mergeProps, mergePropsFactories, 'mergeProps')
-
+    //最终都是为了生成连接到store的高阶组件connectAdvanced
     return connectHOC(selectorFactory, {
       // used in error messages
       methodName: 'connect',
@@ -74,6 +74,7 @@ export function createConnect({
       getDisplayName: name => `Connect(${name})`,
 
       // if mapStateToProps is falsy, the Connect component doesn't subscribe to store state changes
+      //如果传入的mapStateToProps非真 不订阅state的变化来进行更新
       shouldHandleStateChanges: Boolean(mapStateToProps),
 
       // passed through to selectorFactory
@@ -91,5 +92,5 @@ export function createConnect({
     })
   }
 }
-
+//connect函数其实最终都是生成连接到store的高阶组件connectAdvanced的一个函数
 export default createConnect()

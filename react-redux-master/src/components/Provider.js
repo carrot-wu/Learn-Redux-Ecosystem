@@ -28,6 +28,7 @@ export function createProvider(storeKey = 'store') {
       //18/9/11 我拉的版本依然是使用老版本的context 我看了一下官方的其他分支 已经有在测试使用v16之后的新context来编写
 
       //把传入的store添加到getChildContext中
+      //其中subscriptionKey用于父组件connect的订阅器获取 为null
         getChildContext() {
           return { [storeKey]: this[storeKey], [subscriptionKey]: null }
         }

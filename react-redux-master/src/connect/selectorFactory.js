@@ -1,5 +1,7 @@
 import verifySubselectors from './verifySubselectors'
+//selectorFactory是一个工厂函数 根据传入的connectAdvanced 生成selector 而selector的作用就是根据传入的mapDispatchToProps函数 和当前props 等计算出是否需要重新渲染
 
+//设置pure为false时 不进行浅比较 直截了当的父组件渲染 我也进行渲染
 export function impureFinalPropsSelectorFactory(
   mapStateToProps,
   mapDispatchToProps,
@@ -14,7 +16,7 @@ export function impureFinalPropsSelectorFactory(
     )
   }
 }
-
+//默认的浅比较渲染
 export function pureFinalPropsSelectorFactory(
   mapStateToProps,
   mapDispatchToProps,
@@ -110,9 +112,11 @@ export default function finalPropsSelectorFactory(dispatch, {
   if (process.env.NODE_ENV !== 'production') {
     verifySubselectors(mapStateToProps, mapDispatchToProps, mergeProps, options.displayName)
   }
-
+  //判断传入的pure参数
   const selectorFactory = options.pure
+    //默认 true connect后生成的组件都会进行浅比较
     ? pureFinalPropsSelectorFactory
+    //不比较 都渲染
     : impureFinalPropsSelectorFactory
 
   return selectorFactory(
