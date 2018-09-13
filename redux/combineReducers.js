@@ -136,6 +136,7 @@ function assertReducerShape(reducers) {
 /*
 * combineReducers 辅助函数的作用是，把一个由多个不同 reducer 函数作为 value 的 object，合并成一个最终的 reducer 函数，然后就可以对这个 reducer 调用 createStore 方法。
 * 用法 const rootReducer = combineReducers({a:aReducer,b:bReducer})
+* 实际上rootreducer 还是一个函数 rootReducer执行返回值是一个子reducer集合的对象
 * */
 export default function combineReducers(reducers) {
   //获取所有子reducers的key值
