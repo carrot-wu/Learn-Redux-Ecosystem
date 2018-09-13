@@ -39,7 +39,7 @@ export default function applyMiddleware (...middlewares) {
     //这里开始 原来源码解析发生了变化 好像跟2016年的不一样 原来的dispatch = store.dispatch
     //https://github.com/reduxjs/redux/issues/1240 当前issues的讨论 大概就是 在初始化middleware的过程中 执行store.dispatch的话 此时的dispatch不是经过增强的dispatch 会造成之后的中间件也无法正常执行
     let dispatch = () => {
-      //初始化调用dispatch 抛出错误 这时候的dispatch不是经过compose(...chain)(store.dispatch)的dispatch
+      //初始化调用dispatch 抛出错误 这时候的dispatch还是原始的dispatch（store.dispatch）
       throw new Error(
         `Dispatching while constructing your middleware is not allowed. ` +
         `Other middleware would not be applied to this dispatch.`
@@ -55,7 +55,7 @@ export default function applyMiddleware (...middlewares) {
     const chain = middlewares.map(middleware => middleware(middlewareAPI))
     //compose方法 从右到左依次执行中间件的函数
     /*
-    *  const chainFn = compose(...chain) 返回一个从右到左依次执行中间件的函数
+    *  const chainFn = compose(...chain) 返回一个从右到左依次执行中间件的函数 可以去查看compose文件的注释
     *   dispatch = chainFn(store.dispatch) 执行这个返回的函数 传入store.dispatch函数
     * */
     dispatch = compose(...chain)(store.dispatch)
@@ -76,17 +76,18 @@ function reduxThunk (extraArgument) {
   //dispatch = compose(...chain)(store.dispatch) 中的store.disptch就是传入的next回调函数 执行完之后又返回一个函数 (action) =>{ next(action) } 其中的next变成了store.patch
   //这个(action) =>{ next(action) } 会当做回调函数再次传给左边的中间件的next参数 这个回调函数就变成左边中间件的next 就这样依次嵌套形成了洋葱模型
   //最终返回的增强版dispatch方法 就是类似于这样的一个函数
-/*  (action) =>{
+/*
+  (action) =>{
   先对action进行处理
   //遇到next(action) 就是下一个中间的回调 把这个action交给下一个中间件执行 依次调用
   next(action)
   //下一个中间执行完之后 又可以做一些事情
-  }*/
+    }
+*/
   return ({ dispatch, getState }) => next => action => {
     if (typeof action === 'function') {
       return action(dispatch, getState, extraArgument)
     }
-
     return next(action)
   }
 }
