@@ -162,9 +162,9 @@ export default function connectAdvanced(
         //如果父组件的connect 那么会初始化一个发布订阅器用于订阅redux的变化 如果是子组件的connect（必须有父组件进行过connect） 那么不应该再重新对redux进行订阅  父子connect了 都进行订阅会造成性能上的浪费 父组件的render造成子组件render 子组件又render 而且 不符合react的flow从上到下数据流 应该是父render-子render的流程
         //每一个connect的组件内部都有一个订阅器 只有根节点的父组件会订阅redux 其余的会订阅上一层connect父组件的订阅器（subscription）  什么意思呢 就是最根节点的父组件的connect会进行订阅redux 父组件下所有的子组件connect都会去订阅上一级父组件的订阅 简单说就是 根父组件订阅redux 子组件订阅上一级父组件（在初始化发布订阅的函数里面可以看到initSubscription）
         //就是这样 a是根父组件 b是a的子组件 c是b的子组件以此类推 那么 redux-a-b-c
-        //一旦redux的store发生变化 那么每个把更新子组件的方法赋值给componentDidUpdate生命周期 保证父组件渲染更新完后才执行子组件的渲染） 。如果根父组件发现不需要更新 那么通知它的第二级connect组件就是b 你去执行以下你自己的onStateChange看下需不需要更新 以此类推 就实现了自上往下的渲染更新
+        //一旦redux的store发生变化 那么每个组件（不仅仅是根父组件 只要有connect的子组件）把更新子组件的方法赋值给componentDidUpdate生命周期 保证父组件渲染更新完后才执行子组件的渲染） 。如果根父组件发现不需要更新 那么通知它的第二级connect组件就是b 你去执行以下你自己的onStateChange看下需不需要更新 以此类推 就实现了自上往下的渲染更新
 
-        //传递context 如果store是从props上传的就从context里面拿 不然的话（一般是这种情况 单一store）把当前的subscription订阅器向下传递
+        //传递context 如果store是从props上传的就从context里面拿 不然的话（一般是这种情况 单一store）把当前的subscription订阅器通过context向下传递
         const subscription = this.propsMode ? null : this.subscription
         return { [subscriptionKey]: subscription || this.context[subscriptionKey] }
       }
@@ -248,7 +248,7 @@ export default function connectAdvanced(
         //所以现行拷贝一个
         this.notifyNestedSubs = this.subscription.notifyNestedSubs.bind(this.subscription)
       }
-
+      //组件进行订阅的回调方法
       onStateChange() {
         //把store的state数据 和 当前的props数据以及mapstateToprops进行对比 判断是否要重新渲染
         this.selector.run(this.props)
