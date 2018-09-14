@@ -74,15 +74,19 @@ export default function createStore(reducer, preloadedState, enhancer) {
   let currentState = preloadedState
   //订阅监听器的函数组
   let currentListeners = []
-  /*
-  * 这里看 https://github.com/amandakelake/blog/issues/33 的博客所说
-  * 其实就是比如我在订阅的函数中进行注销另外的监听器 类似于
+  /*ensureCanMutateNextListeners函数的作用就是更新同步当前最新的订阅器和当前的订阅器 假的如果就使用currentListeners作为删除和添加的数组
+  * 就是比如我在订阅的函数中进行注销另外的监听器 类似于
   * const unsubscribe1 = store.subscribe(() =>{})
   * const unsubscribe2 = store.subscribe(() =>{ unsubscribe1() })
-  * 这时候我再执行unsubscribe2（）其实是无法正确解绑unsubscribe2的监听器 因为在订阅第二个函数的过程中 我进行了unsubscribe1的解绑操作 那么currentListeners数组的索引值也发生了改变
+  * const unsubscribe3 = store.subscribe(() =>{})
+  *  执行dispatch(action) 在循环的过程中
+  *for (let i = 0; i < listeners.length; i++) {
+  *  const listener = listeners[i];
+  *  listener(); 执行到unsubscribe2的过程中 listener的长度发生了变化减少了1 那么就会造成跳过下一个订阅
+  *}
   * 所以需要拷贝一个真正的监听器函数组 每次进行解绑时  都把当前的监听器函数与最新的监听器函数进行同步
-  * */
-
+  * 因为在订阅第二个函数的过程中 我进行了unsubscribe1的解绑操作 那么currentListeners数组的索引值也发生了改变 所以需要一个拷贝来真正同步真正的订阅器数组
+  */
   //拷贝之前的监听器函数组
   let nextListeners = currentListeners
   //是否处于dispatch的标识符
