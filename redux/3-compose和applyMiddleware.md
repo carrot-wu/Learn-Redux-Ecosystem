@@ -194,7 +194,7 @@ store.dispatch({ type: 'testAction',text:'测试action' });
 
 ```
 结果
-![avatar](../img/img.png)
+![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/master/img/img.png)
 >如果图片挂了的话 直接看文字吧
 - 进入-我是第一个中间件甲
 - 进入-我是第二个中间件甲
@@ -210,7 +210,7 @@ store.dispatch({ type: 'testAction',text:'测试action' });
 
 借一张网上的洋葱模型图就会更加清楚啦
 
-![avatar](../img/middleware.png)
+![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/master/img/middleware.png)
 
 # 最后
 终于分析完啦，大家应该对于redux会有更充分的了解。尤其是中间件这块，redux-thunk之所以能处理函数类型的action。(ps：顺便提一个问题，在看redux-logger中间件源码的过程中作者提到了redux-logger必须放在中间件数组的最后一个。为什么呢？如果你认真的看完了这篇文章应该大致就会懂了。)最后贴上项目的[**github链接**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")，上面会有redux完整源码以及更加详细的注释，如果这系列文章对您真的有能帮助的话不妨点个star？哈哈哈，谢谢各位老哥啦。（同目录下react-redux的源码注释也有，不过我发现要拆分成写文章的形式真的挺耗费时间的。哈哈哈哈哈哈哈，有空再更新吧）
