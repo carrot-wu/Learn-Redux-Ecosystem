@@ -38,9 +38,10 @@ export default store;
 
 > 明白了 redux 的基本用法之后我们就可以深入源码啦
 
+上源码，为了减小篇幅，我删减了很多没用的代码（包括一些错误边界处理，其实很多错误边界处理都很有意思），如果想看完整的redux代码注释的话可以点击[**这里**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")。
+
 # createStore
 
-上源码，为了减小篇幅，我删减了很多没用的代码（包括一些错误边界处理，其实很多错误边界处理都很有意思），如果想看看的更细节的话可以去 github 去翻啦英文注释都没删除哦
 首先要明白的就是 redux 本质就是一个具有增强功能(中间件)的发布订阅函数 subscribe 就是订阅 dispatch 就是发布通知订阅者执行相应的回调
 createStore 一开始会进行一系列的判断 判断是否传入了中间件（applyMiddleware（...）） 如果有的话直接返回 enhancer(createStore)(reducer, preloadedState) 没有的话继续执行下面的代码 声明了 dispatch subscribe getState replaceReudcer 这几个函数后直接进行返回
 
@@ -104,8 +105,10 @@ function getState() {
 ```
 
 ## 派发 dispatch
-dispatch的作用就是传入一个action对象 根据传入的action对象之后执行相应的reducer函数重新计算新的state出来 计算完成之后执行listeners里面的订阅函数（也就是subscribe啦）
-**其中要注意的就是一些边界处理 比如action默认要有一个type属性 以及为什么reducer内部不能还有dispatch的操作 dispatch触发reducer reducer又触发dispatch ...堆栈溢出啦 大哥**
+
+dispatch 的作用就是传入一个 action 对象 根据传入的 action 对象之后执行相应的 reducer 函数重新计算新的 state 出来 计算完成之后执行 listeners 里面的订阅函数（也就是 subscribe 啦）
+**其中要注意的就是一些边界处理 比如 action 默认要有一个 type 属性 以及为什么 reducer 内部不能还有 dispatch 的操作 dispatch 触发 reducer reducer 又触发 dispatch ...堆栈溢出啦 大哥**
+
 ```javascript
 function dispatch(action) {
   //action必须是对象
@@ -138,7 +141,7 @@ function dispatch(action) {
     //结束后置为false
     isDispatching = false;
   }
-   //这里的作用还是用于更新同步监听器
+  //这里的作用还是用于更新同步监听器
   const listeners = (currentListeners = nextListeners);
   //执行listeners里面的订阅函数
   for (let i = 0; i < listeners.length; i++) {
@@ -151,7 +154,9 @@ function dispatch(action) {
 ```
 
 ## 订阅 subscribe
-subscribe就是添加订阅者的一个方法 执行完成之后返回的函数是解绑的方法 其中要注意的一点就是ensureCanMutateNextListeners方法的作用 至于为什么要使用两个监听器数组nextListeners和currentListeners就是为了同步循环中当前监听器数组和真实监听器数组的长度（防止绑定过程冲解绑造成索引值发生变化）
+
+subscribe 就是添加订阅者的一个方法 执行完成之后返回的函数是解绑的方法 其中要注意的一点就是 ensureCanMutateNextListeners 方法的作用 至于为什么要使用两个监听器数组 nextListeners 和 currentListeners 就是为了同步循环中当前监听器数组和真实监听器数组的长度（防止绑定过程冲解绑造成索引值发生变化）
+
 ```javascript
 // const unsubscribe = store.subscribe(() =>
 //   console.log(store.getState())
@@ -165,7 +170,7 @@ function subscribe(listener) {
   return function unsubscribe() {
     //删除之前再次更新拷贝的监听器数组nextListeners 确保当前的监听器函数是最新的
     ensureCanMutateNextListeners();
-      /*ensureCanMutateNextListeners函数的作用就是更新同步当前最新的订阅器和当前的订阅器 假的如果就使用currentListeners作为删除和添加的数组
+    /*ensureCanMutateNextListeners函数的作用就是更新同步当前最新的订阅器和当前的订阅器 假的如果就使用currentListeners作为删除和添加的数组
       * 就是比如我在订阅的函数中进行注销另外的监听器 类似于
       * const unsubscribe1 = store.subscribe(() =>{})
       * const unsubscribe2 = store.subscribe(() =>{ unsubscribe1() })
@@ -192,5 +197,6 @@ function replaceReducer(nextReducer) {
   dispatch({ type: ActionTypes.REPLACE });
 }
 ```
+
 # 总结
-总而言之 createStore就是一个简单的发布订阅函数（applyMiddleware用于增强这个函数）,接下来分析一波合成子reducer的combineReducer函数
+总而言之 createStore 就是一个简单的发布订阅函数（applyMiddleware 用于增强这个函数）,接下来分析一波合成子 reducer 的 combineReducer 函数

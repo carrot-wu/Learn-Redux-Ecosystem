@@ -33,7 +33,7 @@ export default function  applyMiddleware(...middlewares) {
 */
 export default function applyMiddleware (...middlewares) {
   return createStore => (...args) => {
-    //根据传入的reducer, preloadedState生成一个增强班的store 看上面22行
+    //根据传入的reducer, preloadedState生成一个原始的store 看上面22行
     const store = createStore(...args)
 
     //这里开始 原来源码解析发生了变化 好像跟2016年的不一样 原来的dispatch = store.dispatch
@@ -48,7 +48,7 @@ export default function applyMiddleware (...middlewares) {
 
     const middlewareAPI = {
       getState: store.getState,
-      //这里的dispatch是原始的store dispatch 至于包多一层函数 是因为dispatch会传入每一个中间件中 要是不用函数抱着的话 要是有一个中间件认为的修改了dispatch方法的引用 那么全部的中间件传入的dispatch也被修改了
+      //这里的dispatch是原始的store dispatch 至于包多一层函数 是因为dispatch会传入每一个中间件中 要是不用函数包着的话 要是有一个中间件人为的修改了dispatch方法的引用 那么全部的中间件传入的dispatch也被修改了
       dispatch: (...args) => dispatch(...args)
     }
     //执行每个中间件 生成闭包 传入middlewareAPI参数  这样子每个中间件都可以使用getState 和 dispatch方法

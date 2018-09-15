@@ -133,6 +133,13 @@ function assertReducerShape(reducers) {
  * passed object, and builds a state object with the same shape.
  */
 
+//通过源码 我们可以看到combineReducers其实接受要合并的reducer对象 返回combination函数 其实combination还是一个reducer dispatch（action）的时候 会依次调用子reducer计算出子reducer的state值再而合并成对象。
+
+//combineReducers一开始会循环所有的子reducer 筛选出可用的reducer(state 不能为underfined  子reducer在redux内部自定义action的时候必须返回默认值state)并且生成真正可用的finalReducers**
+//dispatch（action）的时候 会循环所有的子reducer传入action依次生成新的子state值 之后浅比较之前的state和新生成的state 如果浅比较不相同就把hasChanged赋值为true 证明子state改变了自然而然总state也改变了**
+//combination在返回state值时会进行判断 判断当前的hasChanged是否为true 是的话证明state发生了变化返回新的state 不然state没有变化返回旧的state值**
+
+
 /*
 * combineReducers 辅助函数的作用是，把一个由多个不同 reducer 函数作为 value 的 object，合并成一个最终的 reducer 函数，然后就可以对这个 reducer 调用 createStore 方法。
 * 用法 const rootReducer = combineReducers({a:aReducer,b:bReducer})

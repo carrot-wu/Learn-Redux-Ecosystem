@@ -14,14 +14,15 @@
 *
 * */
 export default function compose (...funcs) {
+  //如果没有传入中间件 直接把原始的store.dispatch函数返回出去
   if (funcs.length === 0) {
     return arg => arg
   }
-
+//传入一个中间件 直接返回这个中间件函数
   if (funcs.length === 1) {
     return funcs[0]
   }
-  // 最重要的部分 这个函数相当于
+  // 最重要的部分 传入两个或以上的时候 这个函数相当于
   //previousFun 上一个中间件 currentFun 当前中间件
   /*
     funcs.reduce(function(previousFun,currentFun){
