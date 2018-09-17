@@ -26,7 +26,7 @@ const reducers = combineReducers({
 
 上源码，为了减小篇幅，我删减了很多没用的代码（包括一些错误边界处理，其实很多错误边界处理都很有意思），如果想看完整的redux代码注释的话可以点击[**这里**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")。
 
-# createStore
+# combineReducers
 
 通过源码 我们可以看到 combineReducers 其实接受要合并的 reducer 对象 返回 combination 函数 其实 combination 还是一个 reducer dispatch（action）的时候 会依次调用子 reducer 计算出子 reducer 的 state 值再而合并成对象。
 
