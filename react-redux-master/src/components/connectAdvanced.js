@@ -183,6 +183,7 @@ export default function connectAdvanced(
         //进行订阅 上面英文部分说明了为什么不在componentWillMount进行订阅的原因以及ssr的一些问题
         this.subscription.trySubscribe()
         this.selector.run(this.props)
+        //第一次初始化的过程中获取玩props强制重新渲染
         if (this.selector.shouldComponentUpdate) this.forceUpdate()
       }
 

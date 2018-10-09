@@ -1,0 +1,17 @@
+浏览器的路由主要有两种方法实现 都是基于html5的实现 一种就是低版本浏览器用的hash router 另外一种就是 history router
+其中hahrouter 就是在连接上#后面的内容 比如https://testxxx.me/#/testRouter testRouter就是路由的内容 可以通过window.location获取地址
+使用hashrouter 可以通过onhashchange方法来监听hash的改变 hashrouter刷新不会把hash的内容带过去请求服务器 所以hashrouter并不害怕刷新。可以通过监听onhashchange事件获取location.hash获取改变了的地址从而根据回调函数显示不同的组件
+
+history的话更贴近于真实的网页链接 是通过HTML5中history api为基础的 History 对象提供了操作浏览器会话历史（浏览器地址栏中访问的页面，以及当前页面中通过框架加载的页面）的接口
+history.replaceState() 的使用与 history.pushState() 非常相似，区别在于  replaceState()  是修改了当前的历史记录项而不是新建一个。 注意这并不会阻止其在全局浏览器历史记录中创建一个新的历史记录项。这两个api都可以改变当前的页面路径
+与hash 不同的是 history会带上所有的进行访问服务器 在spa中 除了首页都会返回404 所以需要服务器的配合
+
+每当活动的历史记录项发生变化时， popstate 事件都会被传递给window对象。如果当前活动的历史记录项是被 pushState 创建的，或者是由 replaceState 改变的，那么 popstate 事件的状态属性 state 会包含一个当前历史记录状态对象的拷贝。 popstate时间可以用于监听浏览器的前进和后退操作 但是 对于a链接的跳转以及js中代码触发的push和replace事件无法监听
+
+对于一个应用而言，url 的改变(不包括 hash 值得改变)只能由下面三种情况引起：
+点击浏览器的前进或后退按钮
+点击 a 标签
+在 JS 代码中触发 history.push(replace)State 函数
+
+只要对上述三种情况进行拦截，就可以变相监听到 history 的改变而做出调整。针对情况 1，HTML5 规范中有相应的 onpopstate 事件，通过它可以监听到前进或者后退按钮的点击，值得注意的是，调用 history.push(replace)State 并不会触发 onpopstate 事件。
+对于浏览器的前进与后退通过onpopstate事件进行监听 对于a链接则直接通过改写点击方法阻止默认事件进行跳转 对于js中的push和replace则调用的同事进行绑定
