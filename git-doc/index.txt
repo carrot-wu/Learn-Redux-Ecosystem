@@ -1,0 +1,14 @@
+接下来简单介绍一下项目中使用到的git简单用法
+1 把改动的文件添加到暂存区里面才可以commit git add
+2 当前分支的文件还未完成想跑去别的分支进行改动 可以使用藏匿指令 git stash 把当前分支的内容藏匿 然后回到本分支的话 使用git stash pop 其中要注意的几点就是 只有改动过 gitadd的文件才会被藏匿 如果需要巫师这一个条件的话 可以使用 git stash -u
+git stash的藏匿是按照栈的方式保存的 你可以通过 git stash list来查看 要注意的是 藏匿的文件可以再其他分支进行释放 所以谁藏匿的文件是不区别分支的
+3 对于要使用到commit message双引号的 可以直接输入git commit 这时候会进入一个文本编辑器 输入i或者a 可以进入插入模式 这时候输入你要commit的message 输入完之后要退出的话 先按下esc退出编辑模式 然后切换大写点击两次ZZ键即可
+4 对于git rebase的使用 作用就是延河或者说变基 简单说就是可以重新修改交差点 比如说你在branch1分支 这时候dev分支更新了 但是你又不想先合并但是dev的分支内容你又需要 这时候你可以qie去branch1分支 git rebase dev 这时候相当于把branch1的内容全部迁移到了最新的dev上这时候的变成了新的branch1分支 注意的是 对于远程分支不可变得比如dev 或者master 需要通过其他分支的变基
+ git rebase -i HEAD^^ 可以用于修改本都的commit 简单说就是会把当前 的分支以及head指向指向与当前rebase的commit 这时候把需要修改的commit 把pick修改为edit 这时候可以退出编辑器 这时候执行git add. 操作修改暂存文件然后执行 git commit --amend之后 git rebase --continue来执行rebase过程
+
+5 对于上一次的提交不满意想修改的话 可以对文件进行修改暂存玩之后git add 。 执行git commit --amend对commit信息进行修改即可
+
+6 如果想直接丢弃commit的提交 这里分三种情况 如果是最新的话 直接 git reset --hard HEAD^ 即可 这样子会直接丢弃最新的  如果想前两个都丢弃屌的话 注意是前两个全部丢弃 直接 git reset --hard HEAD^^ 即可
+如果只想丢弃屌倒数第二个提交 同上面的原理 使用git rebase变基倒数第二个commit 这时候因为不需要修改 直接删除你想要的commit 既可 然后执行 rebase --continue
+
+7 暂存区的文件如果想丢弃的话怎么办（没有 commit）这时候可以 执行 git checkout --（file的路径即可） 如果全部都不想要怎么办 我有个骚操作 就是直接把所有文件藏匿 git stash 然后新建分支git stash pop把这里的文件全部git commit 然后删除
