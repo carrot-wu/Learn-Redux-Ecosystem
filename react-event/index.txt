@@ -1,0 +1,25 @@
+react的合成事件与原生事件
+
+众所周知，react的事件其实是经过一层封装的 这些事件都是经过封装委托在document上，并且支持异步访问事件的属性（属性不支持）
+SyntheticEvent是共享的。那就意味着在调用事件回调之后，SyntheticEvent对象将会被重用，并且所有属性会被置空。这是出于性能因素考虑的。 因此，您无法以异步方式访问事件
+function onClick(event) {
+  console.log(event); // => nullified object.
+  console.log(event.type); // => "click"
+  const eventType = event.type; // => "click"
+
+  setTimeout(function() {
+    console.log(event.type); // => null
+    console.log(eventType); // => "click"
+  }, 0);
+
+  // Won't work. this.state.clickEvent will only contain null values.
+  this.setState({clickEvent: event});
+
+  // You can still export event properties.
+  this.setState({eventType: event.type});
+}
+以及还有一个很特许的问题 就是涉及到原生以及合成事件的同时绑定
+同时绑定原生事件以及合成事件 原生事件先执行再冒泡到合成事件
+并且只要原生事件阻止冒泡那么合成事件方法并不会执行 因为合成事件是绑定到document上的
+
+合成事件的阻止冒泡只会影响合成事件 原生事件并不会受到影响 因为原生事件的执行实在document上 除非你绑定在window上 因为window在document之上

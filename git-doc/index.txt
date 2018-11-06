@@ -5,6 +5,7 @@ git stash的藏匿是按照栈的方式保存的 你可以通过 git stash list�
 3 对于要使用到commit message双引号的 可以直接输入git commit 这时候会进入一个文本编辑器 输入i或者a 可以进入插入模式 这时候输入你要commit的message 输入完之后要退出的话 先按下esc退出编辑模式 然后切换大写点击两次ZZ键即可
 4 对于git rebase的使用 作用就是延河或者说变基 简单说就是可以重新修改交差点 比如说你在branch1分支 这时候dev分支更新了 但是你又不想先合并但是dev的分支内容你又需要 这时候你可以qie去branch1分支 git rebase dev 这时候相当于把branch1的内容全部迁移到了最新的dev上这时候的变成了新的branch1分支 注意的是 对于远程分支不可变得比如dev 或者master 需要通过其他分支的变基
  git rebase -i HEAD^^ 可以用于修改本都的commit 简单说就是会把当前 的分支以及head指向指向与当前rebase的commit 这时候把需要修改的commit 把pick修改为edit 这时候可以退出编辑器 这时候执行git add. 操作修改暂存文件然后执行 git commit --amend之后 git rebase --continue来执行rebase过程
+ 注意rebase的过程中要严格注意rebase的先后顺序 因为是按照commit的顺序去的 所以你懂得
 
 5 对于上一次的提交不满意想修改的话 可以对文件进行修改暂存玩之后git add 。 执行git commit --amend对commit信息进行修改即可
 

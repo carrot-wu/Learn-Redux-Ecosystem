@@ -1,0 +1,29 @@
+react setState的深入理解
+首先关注的几点就是
+setState是异步 setState完并不能实时获取到更新的state的数据 如果需要获取到更新的state数据可以给setState传入一个函数（prevState,prop） => return {...内部的this.state为更新后的state} 另外一种就是在componentDidUpdate中获取
+其次 setState的更新合并逻辑类似于Object.assign 会把多次类似的请求更新成一个请求 只会更新最后一个setState的数据 （就是同名的state更新只会更新最后一个值 类似于vue的data更新）
+目前在现版本的react中是有同步操作的一个是原生事件的setState 一个是setTimeout的setState 和setInterval都是同步的可以获取到state的值
+--------------------------------------
+接下来主要说一下setState的异步渲染原理
+在给setState传参的时候如果
+  //  将setState事务放进队列中
+  this.updater.enqueueSetState(this, partialState); //对应的是传对象的方法
+  if (callback) {
+    this.updater.enqueueCallback(this, callback, 'setState'); //传函数的方法
+  }
+  ---------------------------
+其中enqueueSetState是一个队列 里面存储了当前需要一起更新的state值 其中this为当前state组件的实例 组件实例以及state都会被放入enqueueUpdate 和queue中
+
+  enqueueSetState: function (publicInstance, partialState) {
+     // 获取当前组件的instance
+    var internalInstance = getInternalInstanceReadyForUpdate(publicInstance, 'setState');
+
+     // 将要更新的state放入一个数组里
+     var queue = internalInstance._pendingStateQueue || (internalInstance._pendingStateQueue = []);
+    queue.push(partialState);
+
+     //  将要更新的component instance也放在一个队列里
+    enqueueUpdate(internalInstance);
+  }
+----------------enqueueUpdate------
+接下来会判断一个参数叫做 isBatchUpdating 这个参数用于判断是否处于批量更新 如果是的话 会把当前的组件实例push进dirtComponent中 不然的话会直接进行diff算法的更新处理
