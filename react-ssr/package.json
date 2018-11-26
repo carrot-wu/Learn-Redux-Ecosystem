@@ -8,11 +8,10 @@
     "start:server": "webpack ./build/webpack.server.config.js"
   },
   "dependencies": {
-    "babel-plugin-dynamic-import-node": "^2.2.0",
-    "babel-plugin-syntax-dynamic-import": "^6.18.0",
-    "babel-preset-env": "^1.7.0",
-    "babel-preset-react-app": "^5.0.3",
-    "babel-register": "^6.26.0",
+    "@babel/preset-env":"^7.1.5",
+    "@babel/preset-react":"^7.0.0",
+    "@babel/register":"^7.0.0",
+    "@babel/core":"^7.1.5",
     "ignore-styles": "^5.0.1",
     "koa": "^2.5.3",
     "koa-logger": "^3.2.0",

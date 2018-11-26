@@ -27,3 +27,9 @@ setState是异步 setState完并不能实时获取到更新的state的数据 如
   }
 ----------------enqueueUpdate------
 接下来会判断一个参数叫做 isBatchUpdating 这个参数用于判断是否处于批量更新 如果是的话 会把当前的组件实例push进dirtComponent中 不然的话会直接进行diff算法的更新处理
+
+取整执行的方法是会涉及到一个事务的概念 事务就是一个函数接受一些方法 会依次执行这些方法的init方法 然后在执行自身方法 最后回去执行一个close方法
+事务就是将需要执行的方法使用 wrapper 封装起来，再通过事务提供的 perform 方法执行。 而在 perform 之前，先执行所有 wrapper 中的 initialize 方法，执行完 perform 之后（即执行 method 方法后）再执行所有的 close 方法。一组 initialize 及 close 方法称为一个 wrapper。从 图3-16中可以看出，事务支持多个 wrapper 叠
+
+在一般声明周期的setState中 在调用setState之前已经调用了 isBuntachUdating的方法了 这时候的isBunath 为true 所以这时候state状态以及component实例并没有直接进行渲染 而是放进了dirtyComponent中
+与之相反的是在异步时间中的setState以及原生事件的addEventListner中 就是同步的 因为这时候不会执行idbatchupdating 所以isbaunch这时候为false 直接进行了渲染更新
