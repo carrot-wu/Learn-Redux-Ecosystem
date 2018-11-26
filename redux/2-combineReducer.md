@@ -28,7 +28,6 @@ const reducers = combineReducers({
 
 # combineReducers
 
-通过源码 我们可以看到 combineReducers 其实接受要合并的 reducer 对象 返回 combination 函数 其实 combination 还是一个 reducer dispatch（action）的时候 会依次调用子 reducer 计算出子 reducer 的 state 值再而合并成对象。
 
 - **combineReducers 一开始会循环所有的子 reducer 筛选出可用的 reducer(state 不能为 underfined 子 reducer 在 redux 内部自定义 action 的时候必须返回默认值 state)并且生成真正可用的 finalReducers**
 - **dispatch（action）的时候 会循环所有的子 reducer 传入 action 依次生成新的子 state 值 之后浅比较之前的 state 和新生成的 state 如果浅比较不相同就把 hasChanged 赋值为 true 证明子 state 改变了自然而然总 state 也改变了**
@@ -62,7 +61,7 @@ export default function combineReducers(reducers) {
 
   let shapeAssertionError;
   try {
-    //assertReducerShape是一个错误处理函数判断子reducer在传入一个非预定好的action时 是否会返回默认的state
+    //assertReducerShape是一个错误处理函数判断子reducer在传入一个私有的action时 是否会返回默认的state 在最下面
     assertReducerShape(finalReducers);
   } catch (e) {
     shapeAssertionError = e;
@@ -79,7 +78,7 @@ export default function combineReducers(reducers) {
       const reducer = finalReducers[key];
       //获取上一次当前key值所对应的state值 下面要进行浅比较
       const previousStateForKey = state[key];
-      //获取传入action之后新生成的state值
+      //获取传入action之后 循环调用子reducer 获取子reducer的state值
       const nextStateForKey = reducer(previousStateForKey, action);
       if (typeof nextStateForKey === "undefined") {
         const errorMessage = getUndefinedStateErrorMessage(key, action);
@@ -87,11 +86,12 @@ export default function combineReducers(reducers) {
       }
       //循环执行reducer 把新的值进行存储
       nextState[key] = nextStateForKey;
-      //浅比较  这里把旧的子reducer state值 与传入action之后生成的state值进行浅比较 判断state是否改变了
+      //浅比较  这里把旧的子reducer state值 与新的子reducer生成的state值进行浅比较 判断state是否改变了  只要其中一个子reducer发生了改变 那么就返回新的总state
+      //所以会发生这样的一种情况 第一次dispatch没有更新（state是发生了变化 但是hasChanged是false的） 第二次dispatch(这时候返回了新的state)，那么就会发现之前没更新的内容也更新了
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey;
     }
     //根据判断赶回state   只要有一个子reducer hasChanged为true那么就重新返回新的nextState  所以这里揭示了为什么reducer必须是纯函数而且如果state改变了必须返回一个新的对象
-    //如果返回的是依然的state对象（有副作用的push，pop方法）如果state是对象 因为nextStateForKey !== previousStateForKey比较的是引用 那么 hasChanged认为是false没有发生改变 自然而然下面返回的state依然是旧的state
+    //如果返回的是依然的state对象（有副作用的push，pop方法）
     return hasChanged ? nextState : state;
   };
 }

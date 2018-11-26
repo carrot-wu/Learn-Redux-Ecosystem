@@ -37,7 +37,8 @@ export default function applyMiddleware (...middlewares) {
     const store = createStore(...args)
 
     //这里开始 原来源码解析发生了变化 好像跟2016年的不一样 原来的dispatch = store.dispatch
-    //https://github.com/reduxjs/redux/issues/1240 当前issues的讨论 大概就是 在初始化middleware的过程中 执行store.dispatch的话 此时的dispatch不是经过增强的dispatch 会造成之后的中间件也无法正常执行
+    //https://github.com/reduxjs/redux/issues/1240 当前issues的讨论 大概就是 在初始化middleware的过程中 如果我进行了一些监听事件 比如history.listen 在回调函数中执行store.dispatch的话 此时的dispatch不是经过增强的dispatch
+    //其实还是原本的store.dispatch 这回让人造成诱惑 有兴趣的可以看一看啦
     let dispatch = () => {
       //初始化调用dispatch 抛出错误 这时候的dispatch还是原始的dispatch（store.dispatch）
       throw new Error(

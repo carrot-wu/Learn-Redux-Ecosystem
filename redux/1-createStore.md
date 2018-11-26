@@ -29,11 +29,11 @@ const store = createStore(reducers, null, enhancer);
 // store.getState()用于获取store的state对象
 console.log(store.getState());
 // store.subscribe接受一个函数用于dispatch时执行
-// 注意 subscribe() 返回一个函数用来注销监听器
+// 注意 subscribe() 返回一个函数用来注销订阅器
 const unsubscribe = store.subscribe(() => console.log(store.getState()));
 // 发起一系列 action
 store.dispatch(addTodo("Learn about actions"));
-// 停止监听 state 更新
+// 停止订阅 state 更新
 unsubscribe();
 export default store;
 ```
@@ -44,8 +44,7 @@ export default store;
 
 # createStore
 
-首先要明白的就是 redux 本质就是一个具有增强功能(中间件)的发布订阅函数 subscribe 就是订阅 dispatch 就是发布通知订阅者执行相应的回调
-createStore 一开始会进行一系列的判断 判断是否传入了中间件（applyMiddleware（...）） 如果有的话直接返回 enhancer(createStore)(reducer, preloadedState) 没有的话继续执行下面的代码 声明了 dispatch subscribe getState replaceReudcer 这几个函数后直接进行返回
+首先要明白的就是 redux 本质就是一个具有增强功能(中间件)的发布订阅函数 subscribe 就是订阅者 dispatch 就是发布通知订阅者执行相应的回调
 
 ```javascript
 export default function createStore(reducer, preloadedState, enhancer) {
@@ -71,21 +70,23 @@ export default function createStore(reducer, preloadedState, enhancer) {
  ---------------------分隔符 下面都是不传入中间件执行的代码------------------------------------------
   let currentReducer = reducer
   let currentState = preloadedState
-  //订阅监听器的函数组
+  //订阅订阅器的数组
   let currentListeners = []
 
-  //拷贝之前的监听器函数组
+  //拷贝之前的订阅器数组  注意nextListeners才是真真实实当前的订阅器数组（当前时）  currentListeners（过去式）是当前循环的订阅器数组 两者长度有可能不一样 看下面
   let nextListeners = currentListeners
   //是否处于dispatch的标识符
   let isDispatching = false
 
   function ensureCanMutateNextListeners() {
-    //同步最新的监听器函数组  下面在订阅的时候会使用到
+    //同步最新的订阅器数组  下面在订阅的时候会使用到
     if (nextListeners === currentListeners) {
       nextListeners = currentListeners.slice()
     }
   }
   ...省略了dispatch subscribe getState replaceReudcer
+  dispatch({ type: ActionTypes.INIT })
+  //初始化store 默认调用一个私有的action 获取state的默认值
   return {
     dispatch,
     subscribe,
@@ -109,7 +110,7 @@ function getState() {
 ## 派发 dispatch
 
 dispatch 的作用就是传入一个 action 对象 根据传入的 action 对象之后执行相应的 reducer 函数重新计算新的 state 出来 计算完成之后执行 listeners 里面的订阅函数（也就是 subscribe 啦）
-**其中要注意的就是一些边界处理 比如 action 默认要有一个 type 属性 以及为什么 reducer 内部不能还有 dispatch 的操作 dispatch 触发 reducer reducer 又触发 dispatch ...堆栈溢出啦 大哥**
+**其中要注意的就是一些边界处理 比如 action 默认要有一个 type 属性 以及为什么 reducer 内部不能还有 dispatch 的操作 dispatch 触发 reducer reducer 又触发 dispatch 堆栈溢出啦 大哥**
 
 ```javascript
 function dispatch(action) {
@@ -143,7 +144,7 @@ function dispatch(action) {
     //结束后置为false
     isDispatching = false;
   }
-  //这里的作用还是用于更新同步监听器
+  //这里的作用还是用于同步更新订阅者数组 没啥每次执行dispatch都要复制一遍呢 （之前上面说的nextListeners才是真实当前状态的数组  因为这时候currentListeners的长度与nextListeners有可能不同）接着看下面
   const listeners = (currentListeners = nextListeners);
   //执行listeners里面的订阅函数
   for (let i = 0; i < listeners.length; i++) {
@@ -157,34 +158,32 @@ function dispatch(action) {
 
 ## 订阅 subscribe
 
-subscribe 就是添加订阅者的一个方法 执行完成之后返回的函数是解绑的方法 其中要注意的一点就是 ensureCanMutateNextListeners 方法的作用 至于为什么要使用两个监听器数组 nextListeners 和 currentListeners 就是为了同步循环中当前监听器数组和真实监听器数组的长度（防止绑定过程冲解绑造成索引值发生变化）
+subscribe 就是添加订阅者的一个方法 执行完成之后返回的函数是解绑的方法 其中要注意的一点就是 ensureCanMutateNextListeners 方法的作用 至于为什么要使用两个订阅器数组 nextListeners 和 currentListeners 就是为了同步循环中当前订阅器数组和真实订阅器数组的长度（防止绑定过程中解绑或者增加订阅造成数组长度发生变化引起跳过一些订阅者的的副作用）
 
 ```javascript
-// const unsubscribe = store.subscribe(() =>
-//   console.log(store.getState())
-// )
-//其中 执行后的返回值是注销监听器
+//其中 执行后的返回值是注销订阅函数
 function subscribe(listener) {
-  //再推入新的订阅者前  先更新拷贝的监听器数组nextListeners
+  //添加订阅者  nextListeners = currentListners.slice()
   ensureCanMutateNextListeners();
   nextListeners.push(listener);
 
   return function unsubscribe() {
-    //删除之前再次更新拷贝的监听器数组nextListeners 确保当前的监听器函数是最新的
+    //解绑订阅者  nextListeners = currentListners.slice()
     ensureCanMutateNextListeners();
     /*ensureCanMutateNextListeners函数的作用就是更新同步当前最新的订阅器和当前的订阅器 假的如果就使用currentListeners作为删除和添加的数组
-      * 就是比如我在订阅的函数中进行注销另外的监听器 类似于
+      * 就是比如我在订阅的函数中进行注销另外的订阅器 类似于
       * const unsubscribe1 = store.subscribe(() =>{})
       * const unsubscribe2 = store.subscribe(() =>{ unsubscribe1() })
       * const unsubscribe3 = store.subscribe(() =>{})
-      *  执行dispatch(action) 在循环的过程中
-      *for (let i = 0; i < listeners.length; i++) {
+      * 执行dispatch(action) 在循环的过程中
+      * for (let i = 0; i < listeners.length; i++) {
       *  const listener = listeners[i];
       *  listener(); 执行到unsubscribe2的过程中 listener的长度发生了变化减少了1 那么就会造成跳过下一个订阅
-      *}
-      * 所以需要拷贝一个真正的监听器函数组 每次进行解绑时  都把当前的监听器函数与最新的监听器函数进行同步
-      * 因为在订阅第二个函数的过程中 我进行了unsubscribe1的解绑操作 那么currentListeners数组的索引值也发生了改变 所以需要一个拷贝来真正同步真正的订阅器数组
+      * }
       * */
+
+      //简单说就是nextListeners就是用来保存真实的订阅器数组 每次dispatch前进行同步两者的引用 一旦在dispatch（dispatch前都会同步两个数组）的过程中进行了添加订阅或者解绑 那么nextListeners拷贝副本 循环的依然是currentListeners 真实的nextnextListeners数组长度随便变化
+      //在下一次dispatch的过程中又进行两个数组的同步
     const index = nextListeners.indexOf(listener);
     nextListeners.splice(index, 1);
   };

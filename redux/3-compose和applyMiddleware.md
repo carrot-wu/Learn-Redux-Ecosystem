@@ -51,7 +51,7 @@ compose 一开始会对传入的中间件数量进行判断 在两个或以上�
 //b为循环中的当前中间件 a为循环中上一个中间件
 funcs.reduce(function(a, b) {
   return function(...args) {
-    //依次从右到左调用中间件 把右边的中间件的执行返回值作为参数传入下一个中间件中
+    //依次从右到左调用中间件 把右边的中间件的执行返回值作为参数传入下一个中间件中 看下文的话其实这里的args就是store.dispatch
     const rightFunResult = b(...args);
     return a(rightFunResult);
   };
@@ -86,7 +86,7 @@ export default function createStore(reducer, preloadedState, enhancer) {
     if (typeof enhancer !== 'function') {
       throw new Error('Expected the enhancer to be a function.')
     }
-    //如果传入了中间件的话 那么就直接执行这个中间件函数
+    //如果传入了中间件的话 那么就直接执行这个中间件函数 等价于applyMiddleware(thunk, logger)(createStore)(reducer, preloadedState)
     return enhancer(createStore)(reducer, preloadedState)
   }
   ...略
@@ -99,10 +99,13 @@ export default function applyMiddleware(...middlewares) {
   return createStore => (...args) => {
     //根据传入的reducer, preloadedState生成一个原始的store
     const store = createStore(...args);
+    //注意 这里的dispatch是2016年的dispatch = store.dispatch 当前官网的源码并不是这样子 而是一个调用就会报错的函数 这里就不深究（虽然会引起一点点问题，为了方便各位理解） 
+    let dispatch = store.dispatch
     const middlewareAPI = {
       getState: store.getState,
-      //这里的dispatch是原始的store dispatch 至于包多一层函数 是因为dispatch会传入每一个中间件中 要是不用函数包着的话 要是有一个中间件人为的修改了dispatch方法的引用 那么全部的中间件传入的dispatch也被修改了
-      dispatch: (...args) => dispatch(...args)
+      //这里的dispatch是原始的store dispatch 至于包多一层函数 是因为dispatch会传入每一个中间件中 要是不用函数包着的话 要是有一个中间件人为的修改了dispatch方法的引用 那么之后的中间件传入的dispatch也被修改了
+
+      dispatch: (...args) => dispatch(...args) //这里的args不是上面的args,是dispatch(...arguments)的arguments 不要弄混淆了
     };
     //执行每个中间件 生成闭包 传入middlewareAPI参数  这样子每个中间件都可以使用getState 和 dispatch方法
     const chain = middlewares.map(middleware => middleware(middlewareAPI));
@@ -173,7 +176,7 @@ function secondMiddleware({ dispatch, getState }) {
     return function(action) {
       console.log("进入-我是第二个中间件甲");
       action.text += "-这是已中间件干的";
-      next(action);
+      next(action); //最后一个的next 其实就是原始版的store.dispatch
       console.log("退出-我是第二个中间件已");
     };
   };
@@ -216,4 +219,4 @@ store.dispatch({ type: 'testAction',text:'测试action' });
 ![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/master/img/middleware.png)
 
 # 最后
-终于分析完啦，大家应该对于redux会有更充分的了解。尤其是中间件这块，redux-thunk之所以能处理函数类型的action。(ps：顺便提一个问题，在看redux-logger中间件源码的过程中作者提到了redux-logger必须放在中间件数组的最后一个。为什么呢？如果你认真的看完了这篇文章应该大致就会懂了。)最后贴上项目的[**github链接**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")，上面会有redux完整源码以及更加详细的注释，如果这系列文章对您真的有能帮助的话不妨点个star？哈哈哈，谢谢各位老哥啦。（同目录下react-redux的源码注释也有，不过我发现要拆分成写文章的形式真的挺耗费时间的。哈哈哈哈哈哈哈，有空再更新吧）
+终于分析完啦，大家应该对于redux会有更充分的了解。尤其是中间件这块，肯定也能明白redux-thunk之所以能处理函数类型的action。(ps：顺便提一个问题，在看redux-logger中间件源码的过程中作者提到了redux-logger必须放在中间件数组的最后一个。为什么呢？如果你认真的看完了这篇文章应该大致就会懂了。)
