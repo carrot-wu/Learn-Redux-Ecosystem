@@ -221,8 +221,12 @@ store.dispatch({ type: 'testAction',text:'测试action' });
 # 最后
 前面说的2016年和最新的代码在applyMiddleware其实是有改变的，我发现修复的这个bug很有意思。接下来和大家分享一下
 **那到底16年版本的代码会造成什么问题呢？**
+
+2016年的代码
 ![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/redux-share/img/2016.png)
+
+最新代码
 ![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/redux-share/img/2018.png)
 
-[**issues的讨论**](https://github.com/reduxjs/redux/issues/1240 "Markdown")。
-[**修复文档说明**](https://github.com/reduxjs/redux/commit/dd165dfc6878bc9aa6045bc1fc1943640a23e5e8#diff-46a3cc23334de21b41088e224f47eaf9R276 "Markdown")。
+- [**issues的讨论**](https://github.com/reduxjs/redux/issues/1240 "Markdown")
+- [**修复文档说明**](https://github.com/reduxjs/redux/commit/dd165dfc6878bc9aa6045bc1fc1943640a23e5e8#diff-46a3cc23334de21b41088e224f47eaf9R276 "Markdown")。
