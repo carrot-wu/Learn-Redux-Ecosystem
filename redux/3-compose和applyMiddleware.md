@@ -219,4 +219,10 @@ store.dispatch({ type: 'testAction',text:'测试action' });
 ![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/master/img/middleware.png)
 
 # 最后
-终于分析完啦，大家应该对于redux会有更充分的了解。尤其是中间件这块，肯定也能明白redux-thunk之所以能处理函数类型的action。(ps：顺便提一个问题，在看redux-logger中间件源码的过程中作者提到了redux-logger必须放在中间件数组的最后一个。为什么呢？如果你认真的看完了这篇文章应该大致就会懂了。)
+前面说的2016年和最新的代码在applyMiddleware其实是有改变的，我发现修复的这个bug很有意思。接下来和大家分享一下
+**那到底16年版本的代码会造成什么问题呢？**
+![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/redux-share/img/2016.png)
+![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/redux-share/img/2018.png)
+
+[**issues的讨论**](https://github.com/reduxjs/redux/issues/1240 "Markdown")。
+[**修复文档说明**](https://github.com/reduxjs/redux/commit/dd165dfc6878bc9aa6045bc1fc1943640a23e5e8#diff-46a3cc23334de21b41088e224f47eaf9R276 "Markdown")。
