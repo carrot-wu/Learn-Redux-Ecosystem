@@ -13,3 +13,64 @@ git stash的藏匿是按照栈的方式保存的 你可以通过 git stash list�
 如果只想丢弃屌倒数第二个提交 同上面的原理 使用git rebase变基倒数第二个commit 这时候因为不需要修改 直接删除你想要的commit 既可 然后执行 rebase --continue
 
 7 暂存区的文件如果想丢弃的话怎么办（没有 commit）这时候可以 执行 git checkout --（file的路径即可） 如果全部都不想要怎么办 我有个骚操作 就是直接把所有文件藏匿 git stash 然后新建分支git stash pop把这里的文件全部git commit 然后删除
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+git的一些常用命令以及用法
+
+rebase和merge的区别
+在开发中，merge和rebase都可以用来合并commit，但是两者之前有什么区别呢
+
+merge
+merge的本质是合并 从当前分支和目标分支的分叉点开始，把目标分支路径上的所有 commit 的内容一并应用到当前分支中，然后自动生成一个新的 commit。简单说就是把目标的分支合并成一个commit提交到当前分支
+merge.jif
+
+试想这么一种情况 比如你在feature分支开发，这时候dev（受保护的）分支提交了一些代码，你的feature分支需要依赖到dev分支的代码
+mergeResult图片
+如果这个分支开发周期很长并且多次依赖dev的代码多次merge之后 就会变成这样子
+merge的缺点 在merge完之后commit历史就会出现分叉，这种分叉又汇合的结构看着就会很不舒服
+
+rebase
+rebase翻译叫做变基或者衍合 我的理解是 merge是把别人的commit合并过来多生成一个commit rebase则相反把交叉点的commit “搬到” 目标分支上
+rebase。jif
+这时候可以操作一下https://learngitbranching.js.org/ 展示一下 rebase相比于merge的优点是什么呢
+rebase result
+可以看出 其实rebase没有交叉点 从始至终都是一条直线 显得就很美观 多次rebase也只是一条直线
+在gitlab中的话 rebase-gitlab 其实左边分支之前有些是落后dev分支的 rebase完之后提交就这样子 到最后分支开发完成之后提个mr就好了 只有两个交叉点
+
+接下来的一些经常碰到的场景的一些解决办法
+上一次commit的内容(文件或者commit message出错了)想修改 commit --amend
+这时候如果是文件的话 直接重新 git add 完之后 执行完之后会生成一条新的commit替换旧得一条commit
+
+如果是倒数第二个commit呢 git rebase -i HEAD^^ （这种情况直接重新提交一个commit就好了 我觉得很简单）
+
+说明：在 Git 中，有两个「偏移符号」： ^ 和 ~。
+^ 的用法：在 commit 的后面加一个或多个 ^ 号，可以把 commit 往回偏移，偏移的数量是 ^ 的数量。例如：master^ 表示 master 指向的 commit 之前的那个 commit； HEAD^^ 表示 HEAD 所指向的 commit 往前数两个 commit。
+~ 的用法：在 commit 的后面加上 ~ 号和一个数，可以把 commit 往回偏移，偏移的数量是 ~ 号后面的数。例如：HEAD~5 表示 HEAD 指向的 commit往前数 5 个 commit。
+
+注意的是vim编辑器的用法 I是插入 window下ZZ是保存退出 esc是退出编辑模式
+
+---commit写的太烂了想直接丢弃掉 git reset --HARD^
+
+---删除倒数第二个commit同理 git rebase -i HEAD^^ 直接删除就好了
+
+---代码puish完之后才发现有问题= =
+分梁总情况 一种是本地的分支 那么很简单 （这种情况直接重新提交一个commit 重新push就好了 我觉得很简单） 当然你也可以本地修改commit然后重新推 但是这时候因为commit引用不同是推不上去的
+一种是远程master或者受保护的分支的话 那么可以重新提交commit再合并就好了 或者干脆一点直接revert
+
+---接下来的的指令 我经常用 叫做gitstash 储藏

@@ -39,6 +39,15 @@ Function.prototype.myBind = function(context){
 }
 //var c = new a()
 
+// new 的模拟实现
+// var a = b.MyNew(参数)
+Object.prototype.MyNew = function(){
+  var obj = {}
+  obj.__proto__ = this.prototype
+  var result = this.apply(obj,Array.prototype.slice.call(arguments))
+  return typeof result === 'object' ? result : obj
+}
+
 //数组扁平化
 Array.prototype.flatten = function(){
   return this.reduce(function(prev,cur){
@@ -99,3 +108,72 @@ function lazyLoad(selector){
   window.addEventListener('scroll',throttle(_lazyLoad,200),false)
 }
 
+//取数组最大值
+function getArrayMax(array){
+  return Math.max.apply(null,array)
+}
+/*
+* 关于async await的一些理解
+* 很多人以为await会一直等待之后的表达式执行完之后才会继续执行后面的代码，实际上await是一个让出线程的标志。await后面的函数会先执行一遍
+* 然后就会跳出整个async函数来执行后面js栈的代码。等当前执行栈代码执行完了之后又会跳回到async函数中等待await后面表达式的返回值
+* 如果返回值为非promise则继续执行async函数后面的代码，否则将返回的promise放入Promise队列（Promise的Job Queue）(等待微任务执行栈的代码执行完then之后 在当前执行栈的末尾才执行await之后的操作)
+* */
+
+// dom操作的一些遍历
+
+//遍历某个dom接线下的所有节点树
+const _length = document.querySelectorAll('body *').length
+
+// 给点节点 打印所有出现在的标签以及出现次数 使用的标签也可以显示出来 https://github.com/shiyangzhaoa/easy-tips/blob/master/tips/dom_depth.md
+const getEleObject = (node) => {
+  if(!node.children.length){
+    return {}
+  }
+
+  return (function test (node, parentObject = {}) {
+    return Array.from(node.children).reduce((obj,cur) => {
+      const eleKey = cur.tagName.toLowerCase()
+      obj[eleKey] =  obj[eleKey] ? (++obj[eleKey]) : 1
+      return cur.children.length ? test(cur, obj) : obj
+    }, parentObject)
+  })(node)
+}
+const body = document.querySelector('body')
+getEleObject(body)
+
+// 求dom节点的最深长度以及dom数的宽度 这里的方法是不加算字符串的深度的
+const getDomDeep = (node) => {
+  let maxDeep = 0;
+  let maxWidth = 0;
+  if(!node.children.length) return {maxDeep,maxWidth}
+  function getLength(node,deep){
+    deep +=1
+    Array.from(node.children).forEach(item => {
+      if(item.children.length){
+        getLength(item,deep)
+      }else{
+        maxDeep = deep > maxDeep ? deep : maxDeep
+        maxWidth += 1
+      }
+    })
+  }
+  getLength(node,0)
+  return {maxDeep,maxWidth}
+}
+
+const getDomTree = (node) => {
+  const treeArray = []
+  if(!node.children.length) return []
+  function getDom(node, parentTagName){
+    Array.from(node.children).forEach(childNode => {
+      const currentTreeTagName = `${parentTagName ? parentTagName : node.tagName.toLowerCase()}--${childNode.tagName.toLowerCase()}`
+      if(childNode.children.length){
+        getDom(childNode, currentTreeTagName)
+      }else{
+        treeArray.push(currentTreeTagName)
+      }
+    })
+  }
+  getDom(node)
+  return treeArray
+}
