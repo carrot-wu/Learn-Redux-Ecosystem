@@ -15,3 +15,4 @@ history.replaceState() 的使用与 history.pushState() 非常相似，区别在
 
 只要对上述三种情况进行拦截，就可以变相监听到 history 的改变而做出调整。针对情况 1，HTML5 规范中有相应的 onpopstate 事件，通过它可以监听到前进或者后退按钮的点击，值得注意的是，调用 history.push(replace)State 并不会触发 onpopstate 事件。
 对于浏览器的前进与后退通过onpopstate事件进行监听 对于a链接则直接通过改写点击方法阻止默认事件进行跳转 对于js中的push和replace则调用的同事进行绑定
+https://mp.weixin.qq.com/s/A1nnoqjOz1fE99cBo0nKwg

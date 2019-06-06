@@ -25,6 +25,21 @@ var throttle = function (fn, delay) {
   }
 }
 
+// apply 和 call 的兼容
+// 原理其实是用过隐形绑定 对象调用的方法来设置this的指向 所以要把传入的this设置为对象这样子进行调用
+
+Function.prototype.myApply = function(context,args = []){
+  //注意的是如果传入的是undefined或者null 都是不绑定this 用自身的this
+  let targetContext = (context === void 0 || context === 'null') ? this : context
+  targetContext = new Object(targetContext)
+  //设置对象 这里为了防止使用对象的key值 可以使用symbol
+  const targetKey = '___keys___'
+  targetContext[targetKey] = this
+  const result =  targetContext[targetKey](...args)
+  delete targetContext[targetKey]
+  return result
+}
+
 //var a = b.bind(this,参数)
 Function.prototype.myBind = function(context){
   //这里的this就是b函数
@@ -95,7 +110,7 @@ function lazyLoad(selector){
   function _lazyLoad(){
     for (let i =num;i<imgSelector.length;i++){
       //获取当前图片元素距离顶端的距离
-      let instance = windowHeight - imgSelector[i].getBoundingClientRect.top()
+      let instance = windowHeight - imgSelector[i].getBoundingClientRect().top
       if(instance >=50){
         //展示图片
         imgSelector.setAttribute('src',imgSelector.getAttribute('data-src'))

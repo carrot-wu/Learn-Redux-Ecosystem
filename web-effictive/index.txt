@@ -205,3 +205,10 @@ csrf其实就是一般在于评论或者可以填入一些信息的层次，如�
 第三十一章 学习js的一些高级技巧
 如何判断一个变量是否数组 Array.isArray() Object.prototype.toString.call().slice(8,-1)
 其中instanceOf也可以 不过会出现问题 就是如果当前内面内嵌入了ifame的话
+
+第三十二章 监听页面关闭事件前发送ajax进行数据埋点
+页面关闭或者刷新会触发onunload事件 在事件内部可以通过同步ajax（不建议）来上报 ，如果是异步的ajax有可能会发送不成功 还没发送就关闭了页面
+这时候提供了一个api Navigator.sendBoard()来进行数据埋点 不过有兼容性问题
+另外一种hack方法就是通过img的src或者script的src属性通过 手动创建一个img或者script调用接口来上报
+
+https dns 相关知识https://juejin.im/post/5cc5421e5188252e761e7e12#heading-0

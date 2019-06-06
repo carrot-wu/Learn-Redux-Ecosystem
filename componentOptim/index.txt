@@ -1,0 +1,70 @@
+在一些复杂组件的封装中比如antd的tabBar
+<AntdTabBar activeValue={} onChange={}>
+  <tab id=></tab>
+  <tab id=></tab>
+  <tab id=></tab>
+</AntdTabBar>
+
+其中activeValue为选中的id值 onchange为点击或者值改变的回调 用于setState
+问题是做到怎么把父组件的props隐形的传给子组件 这就需要在父组件中render方法中拿到子组件的children 然后copy一份重新传入新的props、
+其实就是com.png
+
+react的做法是这样的
+
+在vue中也可以这样做 不同的是在vue中是在子组件中遍历父组件的name 如果有相应的组件那么久直接this.$parent(父组件实例)value就能拿到父组件的值
+也可以通过this.$parent.emit派发父组件的方法
+// 一下是vant的方法 可以看到取值的时候先判断是否有福组件的话就拿父组件的值 不然拿自身的值 修改父组件的值通过emit
+因为父组件有可能深层次嵌套 所以需要递归
+  computed: {
+    checked: {
+      get() {
+        return this.parent
+          ? this.parent.value.indexOf(this.name) !== -1
+          : this.value;
+      },
+
+      set(val) {
+        const { parent } = this;
+        if (parent) {
+          const parentValue = this.parent.value.slice();
+          if (val) {
+            if (parent.max && parentValue.length >= parent.max) {
+              return;
+            }
+            /* istanbul ignore else */
+            if (parentValue.indexOf(this.name) === -1) {
+              parentValue.push(this.name);
+              parent.$emit('input', parentValue);
+            }
+          } else {
+            const index = parentValue.indexOf(this.name);
+            /* istanbul ignore else */
+            if (index !== -1) {
+              parentValue.splice(index, 1);
+              parent.$emit('input', parentValue);
+            }
+          }
+        } else {
+          this.$emit('input', val);
+        }
+// 查找父组件的方法 通过name去查找 这样的话实现了父组件和子组件可以单独使用来解耦
+export default {
+  data() {
+    return {
+      parent: null
+    };
+  },
+
+  methods: {
+    findParent(name) {
+      let parent = this.$parent;
+      while (parent) {
+        if (parent.$options.name === name) {
+          this.parent = parent;
+          break;
+        }
+        parent = parent.$parent;
+      }
+    }
+  }
+};
