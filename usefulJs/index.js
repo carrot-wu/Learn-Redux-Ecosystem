@@ -108,7 +108,7 @@ function lazyLoad(selector){
   //获取屏幕高度
   const windowHeight = window.innerHeight || document.documentElement.clientHeight
   function _lazyLoad(){
-    for (let i =num;i<imgSelector.length;i++){
+    for (let i =num; i<imgSelector.length; i++){
       //获取当前图片元素距离顶端的距离
       let instance = windowHeight - imgSelector[i].getBoundingClientRect().top
       if(instance >=50){
@@ -158,8 +158,8 @@ getEleObject(body)
 
 // 求dom节点的最深长度以及dom数的宽度 这里的方法是不加算字符串的深度的
 const getDomDeep = (node) => {
-  let maxDeep = 0;
-  let maxWidth = 0;
+  let maxDeep = 0
+  let maxWidth = 0
   if(!node.children.length) return {maxDeep,maxWidth}
   function getLength(node,deep){
     deep +=1
@@ -192,3 +192,112 @@ const getDomTree = (node) => {
   getDom(node)
   return treeArray
 }
+
+// 数组的乱序
+
+function arraySplit(array){
+  return array.sort(() => Math.random() > 0.5)
+}
+// 上面的乱序其实是不准确的 因为在chrome中对于sort方法 如果数组长度小于10 那么就用插入排序 不然就用快速排序
+// 对于插入排序或者快速排序 其实有可能一半的数值都不用进行比较久确定值了
+const d = function(array) {
+  const length = array.length
+  // （i< length ） 也可以不过在最后一个数组时也只是替换自己而且 没必要
+  // 原理是从数组末尾开始 随机替换 包括自己到数组首的赋值
+  for(let i =0; i< length -1;  i++){
+    let index = Math.floor((length - i) * Math.random())
+    const cur = array[length - (i+1)]
+    array[length - (i+1)] = array[index]
+    array[index] = cur
+  }
+  return array
+}
+
+//深拷贝
+function deepCopy(object){
+  var isObject = function(target){
+    return (typeof(target) ==='object' && object !== null)
+  }
+
+  var _returnObject = Array.isArray(object) ? [] : {}
+
+
+  if(!isObject(object)){
+    throw new Error('深拷贝对象必须为数组或者对象哦')
+  }
+  //遍历对象
+  for(var key in object){
+    if(object.hasOwnProperty(key)){
+      //如果key值是null的话 直接进行赋值 如果不做这一步的话会在上面直接返回一个false值
+      if(object[key] === null){
+        _returnObject[key] = object[key]
+      }else if(isObject( object[key] )){
+        //递归调用自身
+        _returnObject[key] = deepCopy(object[key])
+      }
+      else{
+        _returnObject[key] = object[key]
+      }
+    }
+  }
+  return _returnObject
+}
+var test = [null,2,[3,undefined,5,[1]],{key:null,value:2},'123',function(){console.log(2)},false]
+var testObject = deepCopy(test)
+test[1] = 'test'
+test[2][0] = 'test'
+test[2][3].push('test')
+test[3].key = 'test'
+test[5] = '1111'
+console.log(testObject)
+
+//lazyman
+
+class LazyMan{
+  constructor(name){
+    this.name = name
+    this.task = []
+
+    let consoleName = () =>{
+      console.log(`i am lazyName ${this.name}`)
+      this.next()
+    }
+    this.task.push(consoleName)
+    setTimeout(() =>{
+      console.log('start')
+      this.next()
+    },0)
+
+  }
+  sleep(time){
+
+    let _sleep = () =>{
+
+      setTimeout(() =>{
+        console.log(`${this.name} sleep ${time} alearady`)
+        this.next()
+      },time*1000)
+    }
+
+    this.task.push(_sleep)
+    return this
+  }
+  eat(data){
+    let _eat = () =>{
+      console.log(`${this.name}eat${data}`)
+      this.next()
+    }
+    this.task.push(_eat)
+    return this
+  }
+  next(){
+    //每次执行完一个任务获取下一个任务 并且去除一开始的任务
+    let nextTask = this.task.shift()
+
+    //console.log(nextTask)
+    nextTask && nextTask()
+  }
+}
+
+let man =  new LazyMan('wuhr')
+man.sleep(0.5).eat('fan').sleep(4).eat('zhopu')

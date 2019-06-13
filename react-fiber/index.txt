@@ -1,0 +1,48 @@
+fiber 架构把渲染分成了额两个阶段 一个是render和render之前称作为协调（render 阶段） render之后的称为commit阶段
+render阶段在新的fiber架构下可能会出现多次打断的情况
+原先的react渲染是基于调用栈的数据结构去渲染的 每次setState时 组件都会依照栈的形式从头到尾全部处理完才会进行渲染 （同步递归 一路向下 ）
+但是每一帧都只有16ms 如果超出时间 动画就会卡顿
+所以说react把时间定义了一些优先级 并且在每次渲染的时候会去获取还剩余多少时间渲染 通过一个api requestIdleCallback来在剩余时间进行干一些事情（）异步 类似于正玄波
+
+新fiber架构中 通过链表的形循环的形式
+简单说就是 通过链表来表示组件的属性结构
+其中child表示子节点 sibling表示兄弟节点 return表示父节点机
+在fiber的算法中是通过父节点 深度优先 会先从父节点一路查找子节点 并且赋值给当前current变量并进行操作  然后继续找到第一层树形结构的子节点 直到没有子节点之后查找兄弟节点 继续执行操作
+ 当兄弟节点也执行完work之后会通过return属性值回到父节点然后执行父节点的sibling 就这样一直下去
+ react通过这种算法来模拟调用栈的形式 但是可以随时进行打断 因为只有一个调用栈 每次执行的都是current（子节点或者兄弟节点会复制给current）
+ 执行操作完成
+unction walk(o) {
+    let root = o;
+    let current = o;
+
+    while (true) {
+        // perform work for a node, retrieve & link the children
+        let child = doWork(current);
+
+        // if there's a child, set it as the current active node
+        if (child) {
+            current = child;
+            continue;
+        }
+
+        // if we've returned to the top, exit the function
+        if (current === root) {
+            return;
+        }
+
+        // keep going up until we find the sibling
+        while (!current.sibling) {
+
+            // if we've returned to the top, exit the function
+            if (!current.return || current.return === root) {
+                return;
+            }
+
+            // set the parent as the current active node
+            current = current.return;
+        }
+
+        // if found, set the sibling as the current active node
+        current = current.sibling;
+    }
+}
