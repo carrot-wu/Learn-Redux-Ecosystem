@@ -51,3 +51,59 @@ function insert(array){
   }
   console.log(array)
 }
+
+//动态规划
+/*
+* 先举一个很通俗易懂的例子，也是图解算法中的例子，有一个只能装4kg的包，物品有音响3000元-重4kg，吉他1500元-重1kg，电脑2000元-重3kg。问，要想包里的价值最高，应该怎么装？（注意：不考虑 物品的体积，不要想吉他很大放不下。）*/
+//https://juejin.im/post/5c623ff3f265da2de1657f97
+const weight = [2,3,5,2,3,6,5,5]
+const values = [3,5,2,5,4,7,8,3]
+const maxWeight = 10
+
+function getProductMaxValue(weight,values,maxWeight) {
+  const defaultArray = Array.from({length: weight.length}).fill(1).map(() => ([]))
+  //获取第一件物品在 0 - maxWeight的价值
+  for(let currentWeight = 0; currentWeight<= maxWeight; currentWeight ++){
+    //第一件物品的价值‘’
+    const firstValue =  values[0]
+    // 当前物品的质量是否大于背包中粮
+    if(weight[0] > currentWeight){
+      // 大于 那么价值就为0
+      defaultArray[0][currentWeight] = 0
+    }else{
+      // 不然 价值就是当前物品的价值
+      defaultArray[0][currentWeight] = firstValue
+    }
+  }
+  // 接下来循环之后的产品
+  for(let currentWeight = 0; currentWeight<= maxWeight; currentWeight ++){
+
+    //获取第二件以及以后的产品价值
+    for(let currentItemIndex = 1; currentItemIndex <= weight.length-1; currentItemIndex++){
+      // 获取当前产品价值
+      const currentItemValue = values[currentItemIndex]
+      // 获取当前产品重量
+      const currentItemWeight = weight[currentItemIndex]
+      const remainWeight = currentWeight - currentItemWeight
+      // 接下来有两种情况 如果能够放进去当前物品的话
+      // 剩余背包的重量 remainWeight = maxWeight - currentWeight
+      // 那入背包的最高价值就是 当前背包价值 加上剩余重量的最高价值（就是上一个数组的重量价值defaultArray[currentItemIndex-1]）
+      // (currentValue + defaultArray[currentItemIndex-1][remainWeight])
+      // 那么比较加入跟不加入之前的价值 取最大即可
+
+      // 不加当前物品质量最大价值（上一个数组就是最大值）
+      const noCurrentItemMaxValue = defaultArray[currentItemIndex-1][currentWeight]
+      if(remainWeight >= 0 ){
+        //  加入当前物品最大价值
+        const addItemMaxValue = currentItemValue + defaultArray[currentItemIndex-1][remainWeight]
+        // 取最大值
+        defaultArray[currentItemIndex][currentWeight] = Math.max(noCurrentItemMaxValue, addItemMaxValue)
+      }else{
+        // 放不进去的话 那么那之前的最大值
+        defaultArray[currentItemIndex][currentWeight] = noCurrentItemMaxValue
+      }
+    }
+  }
+  return defaultArray
+}
+getProductMaxValue(weight,values,maxWeight)

@@ -1,6 +1,10 @@
 import React from 'react'
 import { Route } from 'react-router-dom'
 
+const checkeRedirect = (props) => {
+  
+}
+
 const mapRoutes = routes => {
   if (!routes || routes.length === 0) {
     return null

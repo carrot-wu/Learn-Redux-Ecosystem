@@ -65,7 +65,7 @@ rebase result
 
 注意的是vim编辑器的用法 I是插入 window下ZZ是保存退出 esc是退出编辑模式
 
----commit写的太烂了想直接丢弃掉 git reset --HARD^
+---commit写的太烂了想直接丢弃掉 git reset --hard HEAD^
 
 ---删除倒数第二个commit同理 git rebase -i HEAD^^ 直接删除就好了
 
