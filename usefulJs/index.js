@@ -11,13 +11,13 @@ var debounce = function (fn, delay) {
   }
 }
 
-
 var throttle = function (fn, delay) {
   var _arguments = Array.prototype.slice.call(arguments, 2) //获取参入的参数
   var timer = null
   return function () {
     var that = this
-    if(timer) return false
+    var fnArgs = _arguments.concat(Array.prototype.slice.call(arguments))
+    if (timer) return false
     timer = setTimeout(function () {
       fn && fn.apply(that, fnArgs)
     }, delay)
@@ -28,26 +28,26 @@ var throttle = function (fn, delay) {
 // apply 和 call 的兼容
 // 原理其实是用过隐形绑定 对象调用的方法来设置this的指向 所以要把传入的this设置为对象这样子进行调用
 
-Function.prototype.myApply = function(context,args = []){
+Function.prototype.myApply = function (context, args = []) {
   //注意的是如果传入的是undefined或者null 都是不绑定this 用自身的this
   let targetContext = (context === void 0 || context === 'null') ? this : context
   targetContext = new Object(targetContext)
   //设置对象 这里为了防止使用对象的key值 可以使用symbol
   const targetKey = '___keys___'
   targetContext[targetKey] = this
-  const result =  targetContext[targetKey](...args)
+  const result = targetContext[targetKey](...args)
   delete targetContext[targetKey]
   return result
 }
 
 //var a = b.bind(this,参数)
-Function.prototype.myBind = function(context){
+Function.prototype.myBind = function (context) {
   //这里的this就是b函数
   var that = this
-  var _args = Array.prototype.slice.call(arguments,1)
-  var _fun = function(){
+  var _args = Array.prototype.slice.call(arguments, 1)
+  var _fun = function () {
     var args = _args.concat(Array.prototype.slice.call(arguments))
-    return that.apply( this instanceof _fun ? this : context,args)
+    return that.apply(this instanceof _fun ? this : context, args)
     //判断当前函数里的this是否为当前函数的实例
   }
   return _fun
@@ -56,77 +56,81 @@ Function.prototype.myBind = function(context){
 
 // new 的模拟实现
 // var a = b.MyNew(参数)
-Object.prototype.MyNew = function(){
+Object.prototype.MyNew = function () {
   var obj = {}
   obj.__proto__ = this.prototype
-  var result = this.apply(obj,Array.prototype.slice.call(arguments))
+  var result = this.apply(obj, Array.prototype.slice.call(arguments))
   return typeof result === 'object' ? result : obj
 }
 
 //数组扁平化
-Array.prototype.flatten = function(){
-  return this.reduce(function(prev,cur){
-    if( Array.isArray(cur) ){
+Array.prototype.flatten = function () {
+  return this.reduce(function (prev, cur) {
+    if (Array.isArray(cur)) {
       prev = prev.concat(cur.flatten())
-    }else{
+    } else {
       prev.push(cur)
     }
     return prev
-  },[])
+  }, [])
 }
-console.log([1,2,3,[122,12,[12],[4,5,6]],[12,[13,[14]]]].flatten())
+console.log([1, 2, 3, [122, 12, [12], [4, 5, 6]], [12, [13, [14]]]].flatten())
 
 //函数柯丽化
-function curry(fn,setArray){
+function curry (fn, setArray) {
   var _setArray = setArray || []
-  if(!Array.isArray(_setArray)){
+  if (!Array.isArray(_setArray)) {
     throw new Error('参数必须为数组')
   }
   var length = fn.length
-  return function(){
+  return function () {
     var _args = _setArray.concat(Array.prototype.slice.call(arguments))
-    if(_args.length >= length){
-      return fn.apply(this,_args)
-    }else{
-      return curry(fn,_args)
+    if (_args.length >= length) {
+      return fn.apply(this, _args)
+    } else {
+      return curry(fn, _args)
     }
   }
 }
 
-var add = function(a,b,c){
-  return a+b+c
+var add = function (a, b, c) {
+  return a + b + c
 }
 var curryAdd = curry(add)
 console.log(curryAdd(1)(2)(3))
-console.log(curryAdd(1,2)(3))
-console.log(curryAdd(1,2))
+console.log(curryAdd(1, 2)(3))
+console.log(curryAdd(1, 2))
+
 //
-function lazyLoad(selector){
+function lazyLoad (selector) {
   const imgSelector = document.querySelectorAll(selector)
   let num = 0
   //这里的num作用是获知当前前num涨图片已经展示完毕了 不必要每次都重头开始展示
   //获取屏幕高度
   const windowHeight = window.innerHeight || document.documentElement.clientHeight
-  function _lazyLoad(){
-    for (let i =num; i<imgSelector.length; i++){
+
+  function _lazyLoad () {
+    for (let i = num; i < imgSelector.length; i++) {
       //获取当前图片元素距离顶端的距离
       let instance = windowHeight - imgSelector[i].getBoundingClientRect().top
-      if(instance >=50){
+      if (instance >= 50) {
         //展示图片
-        imgSelector.setAttribute('src',imgSelector.getAttribute('data-src'))
+        imgSelector.setAttribute('src', imgSelector.getAttribute('data-src'))
         //当前图片已经展示完毕 跳转到下一张
-        num +=1
+        num += 1
       }
     }
   }
+
   //这里可以添加节流
-  window.addEventListener('scroll',throttle(_lazyLoad,200),false)
+  window.addEventListener('scroll', throttle(_lazyLoad, 200), false)
 }
 
 //取数组最大值
-function getArrayMax(array){
-  return Math.max.apply(null,array)
+function getArrayMax (array) {
+  return Math.max.apply(null, array)
 }
+
 /*
 * 关于async await的一些理解
 * 很多人以为await会一直等待之后的表达式执行完之后才会继续执行后面的代码，实际上await是一个让出线程的标志。await后面的函数会先执行一遍
@@ -141,14 +145,14 @@ const _length = document.querySelectorAll('body *').length
 
 // 给点节点 打印所有出现在的标签以及出现次数 使用的标签也可以显示出来 https://github.com/shiyangzhaoa/easy-tips/blob/master/tips/dom_depth.md
 const getEleObject = (node) => {
-  if(!node.children.length){
+  if (!node.children.length) {
     return {}
   }
 
   return (function test (node, parentObject = {}) {
-    return Array.from(node.children).reduce((obj,cur) => {
+    return Array.from(node.children).reduce((obj, cur) => {
       const eleKey = cur.tagName.toLowerCase()
-      obj[eleKey] =  obj[eleKey] ? (++obj[eleKey]) : 1
+      obj[eleKey] = obj[eleKey] ? (++obj[eleKey]) : 1
       return cur.children.length ? test(cur, obj) : obj
     }, parentObject)
   })(node)
@@ -160,89 +164,93 @@ getEleObject(body)
 const getDomDeep = (node) => {
   let maxDeep = 0
   let maxWidth = 0
-  if(!node.children.length) return {maxDeep,maxWidth}
-  function getLength(node,deep){
-    deep +=1
+  if (!node.children.length) return { maxDeep, maxWidth }
+
+  function getLength (node, deep) {
+    deep += 1
     Array.from(node.children).forEach(item => {
-      if(item.children.length){
-        getLength(item,deep)
-      }else{
+      if (item.children.length) {
+        getLength(item, deep)
+      } else {
         maxDeep = deep > maxDeep ? deep : maxDeep
         maxWidth += 1
       }
     })
   }
-  getLength(node,0)
-  return {maxDeep,maxWidth}
+
+  getLength(node, 0)
+  return { maxDeep, maxWidth }
 }
 
 const getDomTree = (node) => {
   const treeArray = []
-  if(!node.children.length) return []
-  function getDom(node, parentTagName){
+  if (!node.children.length) return []
+
+  function getDom (node, parentTagName) {
     Array.from(node.children).forEach(childNode => {
       const currentTreeTagName = `${parentTagName ? parentTagName : node.tagName.toLowerCase()}--${childNode.tagName.toLowerCase()}`
-      if(childNode.children.length){
+      if (childNode.children.length) {
         getDom(childNode, currentTreeTagName)
-      }else{
+      } else {
         treeArray.push(currentTreeTagName)
       }
     })
   }
+
   getDom(node)
   return treeArray
 }
 
 // 数组的乱序
 
-function arraySplit(array){
+function arraySplit (array) {
   return array.sort(() => Math.random() > 0.5)
 }
+
 // 上面的乱序其实是不准确的 因为在chrome中对于sort方法 如果数组长度小于10 那么就用插入排序 不然就用快速排序
 // 对于插入排序或者快速排序 其实有可能一半的数值都不用进行比较久确定值了
-const d = function(array) {
+const d = function (array) {
   const length = array.length
   // （i< length ） 也可以不过在最后一个数组时也只是替换自己而且 没必要
   // 原理是从数组末尾开始 随机替换 包括自己到数组首的赋值
-  for(let i =0; i< length -1;  i++){
+  for (let i = 0; i < length - 1; i++) {
     let index = Math.floor((length - i) * Math.random())
-    const cur = array[length - (i+1)]
-    array[length - (i+1)] = array[index]
+    const cur = array[length - (i + 1)]
+    array[length - (i + 1)] = array[index]
     array[index] = cur
   }
   return array
 }
 
 //深拷贝
-function deepCopy(object){
-  var isObject = function(target){
-    return (typeof(target) ==='object' && object !== null)
+function deepCopy (object) {
+  var isObject = function (target) {
+    return (typeof (target) === 'object' && object !== null)
   }
 
   var _returnObject = Array.isArray(object) ? [] : {}
 
-
-  if(!isObject(object)){
+  if (!isObject(object)) {
     throw new Error('深拷贝对象必须为数组或者对象哦')
   }
   //遍历对象
-  for(var key in object){
-    if(object.hasOwnProperty(key)){
+  for (var key in object) {
+    if (object.hasOwnProperty(key)) {
       //如果key值是null的话 直接进行赋值 如果不做这一步的话会在上面直接返回一个false值
-      if(object[key] === null){
+      if (object[key] === null) {
         _returnObject[key] = object[key]
-      }else if(isObject( object[key] )){
+      } else if (isObject(object[key])) {
         //递归调用自身
         _returnObject[key] = deepCopy(object[key])
-      }
-      else{
+      } else {
         _returnObject[key] = object[key]
       }
     }
   }
   return _returnObject
 }
-var test = [null,2,[3,undefined,5,[1]],{key:null,value:2},'123',function(){console.log(2)},false]
+
+var test = [null, 2, [3, undefined, 5, [1]], { key: null, value: 2 }, '123', function () {console.log(2)}, false]
 var testObject = deepCopy(test)
 test[1] = 'test'
 test[2][0] = 'test'
@@ -253,44 +261,47 @@ console.log(testObject)
 
 //lazyman
 
-class LazyMan{
-  constructor(name){
+class LazyMan {
+  constructor (name) {
     this.name = name
     this.task = []
 
-    let consoleName = () =>{
+    let consoleName = () => {
       console.log(`i am lazyName ${this.name}`)
       this.next()
     }
     this.task.push(consoleName)
-    setTimeout(() =>{
+    setTimeout(() => {
       console.log('start')
       this.next()
-    },0)
+    }, 0)
 
   }
-  sleep(time){
 
-    let _sleep = () =>{
+  sleep (time) {
 
-      setTimeout(() =>{
+    let _sleep = () => {
+
+      setTimeout(() => {
         console.log(`${this.name} sleep ${time} alearady`)
         this.next()
-      },time*1000)
+      }, time * 1000)
     }
 
     this.task.push(_sleep)
     return this
   }
-  eat(data){
-    let _eat = () =>{
+
+  eat (data) {
+    let _eat = () => {
       console.log(`${this.name}eat${data}`)
       this.next()
     }
     this.task.push(_eat)
     return this
   }
-  next(){
+
+  next () {
     //每次执行完一个任务获取下一个任务 并且去除一开始的任务
     let nextTask = this.task.shift()
 
@@ -299,5 +310,149 @@ class LazyMan{
   }
 }
 
-let man =  new LazyMan('wuhr')
+let man = new LazyMan('wuhr')
 man.sleep(0.5).eat('fan').sleep(4).eat('zhopu')
+
+//实现一个eventEmitter
+class EventEmitter {
+  constructor (maxLength = 10) {
+    this._events = Object.create(null)
+    this.maxLength = maxLength
+  }
+
+  addListners (type, cb) {
+    //判断是否已经添加了这个方法了 如若添加了的话必须放进去一个数组中 超过的话直接报错
+    if (this._events[type] && this._events[type].length === this.maxLength) throw new Error(`超出${this.maxLength}个监听事件限制啦`)
+    this._events[type] = this._events[type] ? [...this._events[type], cb] : [cb]
+
+  }
+
+  emitEvents (type, ...args) {
+    if (this._events[type]) {
+      this._events[type].forEach((listner) => {
+        listner.apply(this, args)
+      })
+    }
+  }
+
+  //监听一次 只触发一次就要删除
+  once (type, cb) {
+    //先绑定 在addListners的基础上调用之后就删除 重新声明一个函数
+    function onceListners (...args) {
+      cb && cb.apply(this, args)
+      //调用完成之后删除这个监听器
+      this.removeListner(type, onceListners)
+
+    }
+
+    this.addListners(type, onceListners)
+  }
+
+  removeListner (type, cb) {
+    const removeTarget = this._events[type]
+    if (removeTarget) {
+      //如果没传cb 说明全部删除
+      if (!cb) {
+        this._events[type] = []
+      }
+      this._events[type] = this._events[type].reduce((prev, cur) => {
+        if (cur !== cb) {
+          prev.push(cur)
+        }
+
+        return prev
+      }, [])
+
+    }
+  }
+
+  //设置最大监听数
+  setMaxListners (n = 10) {
+    this.maxmaxLength = n
+  }
+
+  static getInstance (maxLength = 10) {
+    if (eventEmitter._instance) {
+      return eventEmitter._instance
+    } else {
+      eventEmitter._instance = new eventEmitter(maxLength)
+      return eventEmitter._instance
+    }
+  }
+}
+
+const _fn = function (data) {
+  console.log('once' + data)
+}
+const _test = eventEmitter.getInstance(3)
+_test.addListners('hhh', function (data) {
+  console.log('hhh111' + data, this._events)
+})
+_test.once('hhh1', _fn)
+_test.addListners('hhh', (data) => {
+  console.log('hhh222' + data)
+})
+_test.emitEvents('hhh', 123)
+
+_test.emitEvents('hhh1', 123)
+
+// promise 内部plofill类似于发布订阅
+class MyPromise {
+  constructor (executor) {
+    this.statusMap = {
+      resolve: 'resolve',
+      pending: 'pending',
+      reject: 'reject'
+    }
+    this.status = this.statusMap.pending
+    // 实例多次的注册then函数
+    // p.then p.then 只要resolve 都会一并执行
+    this.resolveFnArray = []
+    this.rejectFnArray = []
+
+    function resolve (resolveValue) {
+      if (this.status === this.statusMap.pending) {
+        // 延迟调用 为了后面的then先收集回调函数
+        setTimeout(() => {
+          this.status = this.statusMap.resolve
+          this.resolveValue = resolveValue
+          this.resolveFnArray.forEach(resolveFn => resolveFn && resolveFn(resolveValue))
+        }, 0)
+      }
+    }
+
+    function reject (rejectValue) {
+      if (this.status === this.statusMap.pending) {
+        setTimeout(() => {
+          this.status = this.statusMap.reject
+          this.rejectValue = rejectValue
+          this.resolveFnArray.forEach(rejectFn => rejectFn && rejectFn(rejectValue))
+
+        }, 0)
+      }
+    }
+
+    executor(resolve, reject)
+  }
+
+  then (resolveFn, rejectFn) {
+    const { status, resolveValue, rejectValue, statusMap, resolveFnArray, rejectFnArray } = this
+    const { resolve, reject, pending } = statusMap
+    switch (status) {
+      case resolve :
+        resolveFn(resolveValue);
+        break;
+      case reject :
+        rejectFn(rejectValue)
+        break;
+      case pending :
+        resolveFnArray.push(resolveFn)
+        rejectFnArray.push(rejectFn)
+        break;
+      default :
+    }
+    // p.then.then
+    // 最后需要返回一个promise实例 来实现链式调用的this
+    return this
+  }
+}
