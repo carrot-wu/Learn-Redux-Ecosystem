@@ -101,7 +101,25 @@ console.log(curryAdd(1)(2)(3))
 console.log(curryAdd(1, 2)(3))
 console.log(curryAdd(1, 2))
 
-//
+// compose 方法 摘自redux中的源码
+
+function compose (...fns) {
+  if (fns.length === 0) {
+    return args => args
+  }
+  if (fns.length === 1) {
+    return fns[0]
+  }
+  return fns.reduce((prev, cur) => {
+    return (...args) => {
+      const rightResult = cur(...args)
+      return prev(rightResult)
+    }
+  })
+  // return fns.reduce((prev, cur) => (...args) => prev(cur(...args)))
+}
+
+//懒加载
 function lazyLoad (selector) {
   const imgSelector = document.querySelectorAll(selector)
   let num = 0
@@ -440,15 +458,15 @@ class MyPromise {
     const { resolve, reject, pending } = statusMap
     switch (status) {
       case resolve :
-        resolveFn(resolveValue);
-        break;
+        resolveFn(resolveValue)
+        break
       case reject :
         rejectFn(rejectValue)
-        break;
+        break
       case pending :
         resolveFnArray.push(resolveFn)
         rejectFnArray.push(rejectFn)
-        break;
+        break
       default :
     }
     // p.then.then
@@ -456,3 +474,116 @@ class MyPromise {
     return this
   }
 }
+
+/**
+ * 计算大数相加值
+ * @param stringArray 大数数组
+ * @returns {string}
+ */
+function bigNumSum (...stringArray) {
+  if (stringArray.length === 1) {
+    return stringArray.join('')
+  }
+
+  function getZero (length) {
+    return Array.from({ length }).fill('0').join('')
+  }
+
+  // 获取数组最大的位数长度
+  const maxStringLength = Math.max.apply(null, stringArray.map(stringNum => stringNum.length))
+  // 给数组平整位数
+  const fillStringArray = stringArray.map(stringNum => {
+    const fillLength = Math.abs(maxStringLength - stringNum.length)
+    return getZero(fillLength) + stringNum
+  })
+  console.log(maxStringLength)
+  // 处理完毕 接下来进行计算
+  // 用一个数组来保存 相加的位数
+  const totalArray = []
+  // 是否进一 大于10的话 默认为0
+  let isUpperOne = 0
+
+  // 获取index值的相加和
+  function getLengthResult (index) {
+    return fillStringArray.reduce((prev, cur) => prev + Number(cur[index]), 0)
+  }
+
+  for (let i = fillStringArray[0].length; i > 0; i--) {
+    // 求数组的相加值
+    const result = isUpperOne + getLengthResult(i - 1)
+    if (result >= 10) {
+      // 大于10 进位数 除以10 向下取整
+      isUpperOne = Math.floor(result / 10)
+    } else {
+      // 小于10
+      isUpperOne = 0
+    }
+    // 求余数
+    const pushResult = result >= 10 ? (result % 10) : result
+    totalArray.unshift(pushResult)
+  }
+  // 循环结束之后 对于首位的进为直接添加
+  isUpperOne > 0 && totalArray.unshift(isUpperOne)
+  return totalArray.join('')
+}
+
+const __test = bigNumSum('9111111111111119', '922222222222222222219', '9321111111113213119', '9213123123119')
+
+// 对于前段事件对象的理解
+
+
+// 点击一个目标时完整的事件触发
+ /*-------------------------------------IMPORTANT --------------------------------*/
+// 1 先从根节点开始触发捕获事件 直到当前点击的目标
+// 2 到达当前触发事件的目标 （目标也可能注册了冒泡或者捕获事件） 按照该目标的事件注册顺序进行触发 （不区分冒泡 或者捕获 ）
+// 3 从当前目标父节点开始 触发冒泡事件直到根节点
+
+/*
+*
+      let parentNode = document.getElementById('parent')
+      // 因为触发标签不同，导致输出顺序不同
+      // 点击parent会输出冒泡，捕获，因为目标节点按照绑定顺序输出
+      // 点击child会输出捕获，冒泡，因为非目标节点正常按照浏览器事件机制执行
+      let child = document.getElementById('child')
+      parentNode.addEventListener(
+        'click',
+        event => {
+          console.log('冒泡')
+        },
+        false
+      )
+      parentNode.addEventListener(
+        'click',
+        event => {
+          console.log('捕获 ')
+        },
+        true
+      )
+
+
+      child.addEventListener(
+        'click',
+        event => {
+          console.log('child冒泡')
+        },
+        false
+      )
+      child.addEventListener(
+        'click',
+        event => {
+          console.log('child捕获')
+        },
+        true
+      )
+      child.onclick = function() {
+        console.log('child')
+      }
+* */
+
+/*
+* "捕获 "
+"child冒泡"
+"child捕获"
+"child"
+"冒泡"
+* */
