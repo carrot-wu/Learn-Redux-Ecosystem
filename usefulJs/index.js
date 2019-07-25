@@ -531,9 +531,8 @@ const __test = bigNumSum('9111111111111119', '922222222222222222219', '932111111
 
 // 对于前段事件对象的理解
 
-
 // 点击一个目标时完整的事件触发
- /*-------------------------------------IMPORTANT --------------------------------*/
+/*-------------------------------------IMPORTANT --------------------------------*/
 // 1 先从根节点开始触发捕获事件 直到当前点击的目标
 // 2 到达当前触发事件的目标 （目标也可能注册了冒泡或者捕获事件） 按照该目标的事件注册顺序进行触发 （不区分冒泡 或者捕获 ）
 // 3 从当前目标父节点开始 触发冒泡事件直到根节点
@@ -587,3 +586,60 @@ const __test = bigNumSum('9111111111111119', '922222222222222222219', '932111111
 "child"
 "冒泡"
 * */
+
+/*
+* 正则表达式获取url query
+*
+* */
+let b = 'http:www.baidu.com/index?name=username&age=27&pwd=zbc|123@&likes=lol&likes=beautifull girl&c=&d='
+const c = b.match(/([?&])([^?&#]+=[^&#]*)/g).reduce((obj, item) => {
+    const [key, value] = item.slice(1).split('=')
+    const prevValue = obj[key]
+    obj[key] = prevValue ? (Array.isArray(prevValue) ? [...prevValue, value] : [value, prevValue]) : value
+    return obj
+  },
+  {}
+)
+
+/* 任务调度器*/
+class Scheduler {
+  constructor() {
+    this.schedulerArray = []
+    Promise.resolve().then(() => {
+      this.next()
+      this.next()
+    })
+  }
+  add(promiseCreator) {
+    return new Promise((resolve, reject) => {
+      const _promiseCreator = () => {
+        return promiseCreator().then(() => {
+          this.next()
+          resolve()
+        })
+      }
+      this.schedulerArray.push(_promiseCreator)
+    })
+
+  }
+  next(){
+    const nextScheduler = this.schedulerArray.shift()
+    nextScheduler && nextScheduler()
+  }
+  // ...
+}
+
+const timeout = (time) => new Promise(resolve => {
+  setTimeout(resolve, time)
+})
+
+const scheduler = new Scheduler()
+const addTask = (time, order) => {
+  scheduler.add(() => timeout(time))
+    .then((...args) => console.log(args))
+}
+
+addTask(1000, '1')
+addTask(500, '2')
+addTask(300, '3')
+addTask(400, '4')
