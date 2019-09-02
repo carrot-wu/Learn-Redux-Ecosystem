@@ -112,13 +112,39 @@ function compose (...fns) {
   }
   return fns.reduce((prev, cur) => {
     return (...args) => {
-      const rightResult = cur(...args)
-      return prev(rightResult)
+      const rightResult = prev(...args)
+      return cur(rightResult)
     }
   })
   // return fns.reduce((prev, cur) => (...args) => prev(cur(...args)))
 }
+/*
+// 如果设置中间件的话 传入的函数必须为这样的格式
 
+function createMiddleware(text) {
+  return function middleware(next) {
+    // next 为上一个中间的执行回调返回的函数
+    // 这里是中间件的初始执行
+    // 就是洋葱进入的过程
+    console.log(`${text}我进来啦hhhh`)
+    // 其中返回的函数就是回调函数
+    return function(args) {
+      // 这里是洋葱模型返回出去的执行过程
+      // 调用next的话 就是调用上一层中间的回调return方法
+      console.log(`${text}我出去啦 hhhhhh`)
+      return next()
+    }
+  }
+}
+// 如果要做中间件 还得把第一个函数进行处理 一般可以直接放进去compose内部
+const firstMiddleware = function(next){
+  return next()
+}
+const middlewre1 = createMiddleware('1111')
+const middlewre2 = createMiddleware('2222')
+const testCompose = compose( middlewre1, middlewre2,firstMiddleware)
+testCompose(() => {console.log('first')})
+*/
 //懒加载
 function lazyLoad (selector) {
   const imgSelector = document.querySelectorAll(selector)

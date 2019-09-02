@@ -50,6 +50,10 @@ export default {
 * 最后就会获取值 同时内部对值进行了缓存 用过this.dirty变量 如果为true那么直接重新获取值然后shezhiweifalse
 * 当 对于computed的依赖数据发生变化时 那么会触发setter方法 对于computed watcher 会执行update方法进行更新数据 并且设置this.dirty为true
 *
+* 简单说就是 在初始化computed的过程中会实例化一个computed watcher 和 dep实例 在初次渲染computed 的dep实例会把当前的dep。targe就是 user watcher进行收集依赖
+* 之后会进行默认求职 执行getter方法 这时候会触发get方法中data实行的getter方法 这时候data属性中的dep实例会把watcher(这时候是computed watcher也收集进 data的dep实例中)
+* 因此 对于data的修改 notify (uaer watcher 以及computed watcher 进行重新求值) 这时候的computed watcher会重新计算值 并且设置dthis.dirty为true 执行this.dep.notify 通知user watcher 更新
+* computed( dep 收集 render watcher 创建computed watcher 同时 computed watcher的执行会重新计算值并且this.dep.notify) - data（dep 收集 computed watcher）
 *
 * */
 
@@ -58,7 +62,17 @@ export default {
 // vue 中的watcher有四中类型
 
 /*
-* 1 deep watcher
+** 1render watcher 组件的渲染watcher
+
+* 2 user watcher
+前面我们分析过，通过 vm.$watch 创建的 watcher 是一个 user watcher，其实它的功能很简单，在对 watcher 求值以及在执行回调函数的时候。
+*
+* 3computed watcher
+computed watcher 几乎就是为计算属性量身定制的，我们刚才已经对它做了详细的分析，这里不再赘述了。
+
+#  sync watcher 归属于userwatcher
+在我们之前对 setter 的分析过程知道，当响应式数据发送变化后，触发了 watcher.update()，只是把这个 watcher 推送到一个队列中，在 nextTick 后才会真正执行 watcher 的回调函数。而一旦我们设置了 sync，就可以在当前 Tick 中同步执行 watcher 的回调函数。
+* *  deep watcher  归属于userwatcher
 *  在watcher一个深层次对象时候 这个时候是不会 log 任何数据的，因为我们是 watch 了 a 对象，只触发了 a 的 getter，并没有触发 a.b 的 getter，所以并没有订阅它的变化，导致我们对 vm.a.b = 2 赋值的时候，虽然触发了 setter，但没有可通知的对象，所以也并不会触发 watch 的回调函数了。
 
 而我们只需要对代码做稍稍修改，就可以观测到这个变化了
@@ -70,13 +84,5 @@ watch: {
     }
   }
 }
-*
-* 2 user watcher
-前面我们分析过，通过 vm.$watch 创建的 watcher 是一个 user watcher，其实它的功能很简单，在对 watcher 求值以及在执行回调函数的时候。
-*
-* 3computed watcher
-computed watcher 几乎就是为计算属性量身定制的，我们刚才已经对它做了详细的分析，这里不再赘述了。
 
-# 4 sync watcher
-在我们之前对 setter 的分析过程知道，当响应式数据发送变化后，触发了 watcher.update()，只是把这个 watcher 推送到一个队列中，在 nextTick 后才会真正执行 watcher 的回调函数。而一旦我们设置了 sync，就可以在当前 Tick 中同步执行 watcher 的回调函数。
 * */
