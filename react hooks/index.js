@@ -24,15 +24,15 @@ function Demo() {
 function Demo() {
   const [count, setCount] = useState(0);
 
-  function getFetchUrl(query) {
+  function awaitdata(query) {
     return `http://demo${query}`
     // return `http://demo${query}${count}`
   }
 
   useEffect(() => {
-    const url = getFetchUrl('redux')
+    const url = awaitdata('redux')
     console.log(url)
-  }, [getFetchUrl]);
+  }, [awaitdata]);
 
   const alertCount = useCallback(() => {
     console.log(count)

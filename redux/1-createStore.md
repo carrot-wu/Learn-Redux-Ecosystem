@@ -1,4 +1,4 @@
-# 前言
+## 前言
 
 >在阅读源码的过程中我也翻阅了大量的资料。一般是先去看别人的源码分析完完整镇过的读一遍之后，看完了之后自己再把官网的clone下来自己再慢慢的阅读添加注释。希望大家在阅读完有感想之后也把官网源码clone下来不照着任何的资料边写注释边阅读完全部源码，这样子更有利于深刻理解。
 
@@ -6,7 +6,7 @@
 
 > 为了好方便理解 我会先从 redux 提供的 api 入手 一步一步的深入解读
 
-# redux 的基本使用
+## redux 的基本使用
 
 ```javascript
 //常用的三个api
@@ -23,7 +23,8 @@ const reducers = combineReducers({
 });
 //applyMiddleware使用中间件增强dispatch
 const enhancer = applyMiddleware(thunk, logger);
-//createStore 创建一个 Redux store 来以存放应用中所有的 state，应用中应有且仅有一个 store(react-redux有兼容多个store的写法，后面解读react-redux再说啦)
+//createStore 创建一个 Redux store 来以存放应用中所有的 state
+// 应用中应有且仅有一个 store(react-redux有兼容多个store的写法，后面解读react-redux再说啦)
 const store = createStore(reducers, null, enhancer);
 //返回的store其实是一个对象，上面提供了一些常用的方法
 // store.getState()用于获取store的state对象
@@ -42,7 +43,7 @@ export default store;
 
 上源码，为了减小篇幅，我删减了很多没用的代码（包括一些错误边界处理，其实很多错误边界处理都很有意思），如果想看完整的redux代码注释的话可以点击[**这里**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")。
 
-# createStore
+## createStore
 
 首先要明白的就是 redux 本质就是一个具有增强功能(中间件)的发布订阅函数 subscribe 就是订阅 dispatch 就是发布通知订阅者执行相应的回调
 createStore 一开始会进行一系列的判断 判断是否传入了中间件（applyMiddleware（...）） 如果有的话直接返回 enhancer(createStore)(reducer, preloadedState) 没有的话继续执行下面的代码 声明了 dispatch subscribe getState replaceReudcer 这几个函数后直接进行返回
@@ -172,7 +173,8 @@ function subscribe(listener) {
   return function unsubscribe() {
     //删除之前再次更新拷贝的监听器数组nextListeners 确保当前的监听器函数是最新的
     ensureCanMutateNextListeners();
-    /*ensureCanMutateNextListeners函数的作用就是更新同步当前最新的订阅器和当前的订阅器 假的如果就使用currentListeners作为删除和添加的数组
+    /*ensureCanMutateNextListeners函数的作用就是更新同步当前最新的订阅器和当前的订阅器
+      * 使用currentListeners作为删除和添加的数组
       * 就是比如我在订阅的函数中进行注销另外的监听器 类似于
       * const unsubscribe1 = store.subscribe(() =>{})
       * const unsubscribe2 = store.subscribe(() =>{ unsubscribe1() })
@@ -183,7 +185,8 @@ function subscribe(listener) {
       *  listener(); 执行到unsubscribe2的过程中 listener的长度发生了变化减少了1 那么就会造成跳过下一个订阅
       *}
       * 所以需要拷贝一个真正的监听器函数组 每次进行解绑时  都把当前的监听器函数与最新的监听器函数进行同步
-      * 因为在订阅第二个函数的过程中 我进行了unsubscribe1的解绑操作 那么currentListeners数组的索引值也发生了改变 所以需要一个拷贝来真正同步真正的订阅器数组
+      * 因为在订阅第二个函数的过程中 我进行了unsubscribe1的解绑操作
+      * 那么currentListeners数组的索引值也发生了改变 所以需要一个拷贝来真正同步真正的订阅器数组
       * */
     const index = nextListeners.indexOf(listener);
     nextListeners.splice(index, 1);
@@ -200,5 +203,5 @@ function replaceReducer(nextReducer) {
 }
 ```
 
-# 总结
+## 总结
 总而言之 createStore 就是一个简单的发布订阅函数（applyMiddleware 用于增强这个函数）,接下来分析一波合成子 reducer 的 combineReducer 函数

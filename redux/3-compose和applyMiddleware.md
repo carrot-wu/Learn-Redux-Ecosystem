@@ -1,4 +1,4 @@
-# 前言
+## 前言
 
 >在阅读源码的过程中我也翻阅了大量的资料。一般是先去看别人的源码分析完完整镇过的读一遍之后，看完了之后自己再把官网的clone下来自己再慢慢的阅读添加注释。希望大家在阅读完有感想之后也把官网源码clone下来不照着任何的资料边写注释边阅读完全部源码，这样子更有利于深刻理解。
 
@@ -7,7 +7,7 @@
 
 > redux 本质就是一个具有增强功能(中间件)的发布订阅函数 而 applyMiddleware 实质上就承担了增强 redux 的作用。
 
-# applyMiddleware 的基本使用
+## applyMiddleware 的基本使用
 
 ```javascript
 //常用的三个api
@@ -18,7 +18,8 @@ import logger from "redux-logger";
 
 //applyMiddleware使用中间件增强dispatch
 const enhancer = applyMiddleware(thunk, logger);
-//createStore 创建一个 Redux store 来以存放应用中所有的 state，应用中应有且仅有一个 store(react-redux有兼容多个store的写法，后面解读react-redux再说啦)
+//createStore 创建一个 Redux store 来以存放应用中所有的 state
+// 应用中应有且仅有一个 store(react-redux有兼容多个store的写法，后面解读react-redux再说啦)
 const store = createStore(reducers, null, enhancer);
 export default store;
 ```
@@ -27,7 +28,7 @@ export default store;
 
 上源码，为了减小篇幅，我删减了很多没用的代码（包括一些错误边界处理，其实很多错误边界处理都很有意思），如果想看完整的 redux 代码注释的话可以点击[**这里**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")。
 
-# compose
+## compose
 
 ```javascript
 export default function compose(...funcs) {
@@ -74,9 +75,11 @@ const store = createStore(reducers, null, enhancer);
 ```javascript
 //createStore源码
 export default function createStore(reducer, preloadedState, enhancer) {
-  //首先createStore接受三个参数第一个是必须的reducer函数，第二个为state默认值（可传） 第三个enhancer为增强的中间件
+  //首先createStore接受三个参数
+  // 第一个是必须的reducer函数，第二个为state默认值（可传） 第三个enhancer为增强的中间件
   if (typeof preloadedState === 'function' && typeof enhancer === 'undefined') {
-    //redux允许第二个参数直接传入中间件  判断第二个参数是否为函数 并且第三个参数为undefined（证明用户省略了state默认值，传入了第二个参数是中间件）
+    //redux允许第二个参数直接传入中间件
+    // 判断第二个参数是否为函数 并且第三个参数为undefined（证明用户省略了state默认值，传入了第二个参数是中间件）
     enhancer = preloadedState
     preloadedState = undefined
   }
@@ -101,7 +104,9 @@ export default function applyMiddleware(...middlewares) {
     const store = createStore(...args);
     const middlewareAPI = {
       getState: store.getState,
-      //这里的dispatch是原始的store dispatch 至于包多一层函数 是因为dispatch会传入每一个中间件中 要是不用函数包着的话 要是有一个中间件人为的修改了dispatch方法的引用 那么全部的中间件传入的dispatch也被修改了
+      //这里的dispatch是原始的store
+      // dispatch 至于包多一层函数 是因为dispatch会传入每一个中间件中 要是不用函数包着的话
+      // 要是有一个中间件人为的修改了dispatch方法的引用 那么全部的中间件传入的dispatch也被修改了
       dispatch: (...args) => dispatch(...args)
     };
     //执行每个中间件 生成闭包 传入middlewareAPI参数  这样子每个中间件都可以使用getState 和 dispatch方法
@@ -128,7 +133,7 @@ applyMiddleware 一开始会通过原始的 createStore 方法生成一个没有
 
 ```javascript
 function reduxThunk(extraArgument) {
-  //applyMiddleware(reduxThunk()) 我们传入的中间件的其实是执行函数后下面返回的函数 在这里我把返回的函数直接当做中间件
+  //applyMiddleware(reduxThunk()) 传入的中间件的其实是执行函数后下面返回的函数 在这里返回的函数直接当做中间件
   return function({ dispatch, getState }) {
     //{ dispatch, getState }为传入的middlewareAPI 再次返回一个函数
     return function(next) {
@@ -196,7 +201,7 @@ const store = createStore(
 store.dispatch({ type: 'testAction',text:'测试action' });
 
 ```
-结果
+
 ![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/master/img/img.png)
 >如果图片挂了的话 直接看文字吧
 - 进入-我是第一个中间件甲
@@ -215,5 +220,5 @@ store.dispatch({ type: 'testAction',text:'测试action' });
 
 ![avatar](https://github.com/carrot-wu/Learn-Redux-Ecosystem/blob/master/img/middleware.png)
 
-# 最后
+## 最后
 终于分析完啦，大家应该对于redux会有更充分的了解。尤其是中间件这块，redux-thunk之所以能处理函数类型的action。(ps：顺便提一个问题，在看redux-logger中间件源码的过程中作者提到了redux-logger必须放在中间件数组的最后一个。为什么呢？如果你认真的看完了这篇文章应该大致就会懂了。)最后贴上项目的[**github链接**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")，上面会有redux完整源码以及更加详细的注释，如果这系列文章对您真的有能帮助的话不妨点个star？哈哈哈，谢谢各位老哥啦。（同目录下react-redux的源码注释也有，不过我发现要拆分成写文章的形式真的挺耗费时间的。哈哈哈哈哈哈哈，有空再更新吧）

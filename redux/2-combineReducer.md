@@ -1,4 +1,4 @@
-# 前言
+## 前言
 
 >在阅读源码的过程中我也翻阅了大量的资料。一般是先去看别人的源码分析完完整镇过的读一遍之后，看完了之后自己再把官网的clone下来自己再慢慢的阅读添加注释。希望大家在阅读完有感想之后也把官网源码clone下来不照着任何的资料边写注释边阅读完全部源码，这样子更有利于深刻理解。
 
@@ -7,7 +7,7 @@
 
 > 最开始我们分析 createStore 函数的源码，接下来还有一个 api 我们会经常使用到就是 combineReducer，用于把多个分模块的子 reducer 生成一个总的 reducer
 
-# combineReducers 的基本使用
+## combineReducers 的基本使用
 
 ```javascript
 //常用的三个api
@@ -26,7 +26,7 @@ const reducers = combineReducers({
 
 上源码，为了减小篇幅，我删减了很多没用的代码（包括一些错误边界处理，其实很多错误边界处理都很有意思），如果想看完整的redux代码注释的话可以点击[**这里**](https://github.com/carrot-wu/Learn-Redux-Ecosystem "Markdown")。
 
-# combineReducers
+## combineReducers
 
 通过源码 我们可以看到 combineReducers 其实接受要合并的 reducer 对象 返回 combination 函数 其实 combination 还是一个 reducer dispatch（action）的时候 会依次调用子 reducer 计算出子 reducer 的 state 值再而合并成对象。
 
@@ -90,8 +90,11 @@ export default function combineReducers(reducers) {
       //浅比较  这里把旧的子reducer state值 与传入action之后生成的state值进行浅比较 判断state是否改变了
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey;
     }
-    //根据判断赶回state   只要有一个子reducer hasChanged为true那么就重新返回新的nextState  所以这里揭示了为什么reducer必须是纯函数而且如果state改变了必须返回一个新的对象
-    //如果返回的是依然的state对象（有副作用的push，pop方法）如果state是对象 因为nextStateForKey !== previousStateForKey比较的是引用 那么 hasChanged认为是false没有发生改变 自然而然下面返回的state依然是旧的state
+    //根据判断赶回state   只要有一个子reducer hasChanged为true那么就重新返回新的nextState
+    // 所以这里揭示了为什么reducer必须是纯函数而且如果state改变了必须返回一个新的对象
+    //如果返回的是旧的state对象（有副作用的push，pop方法）
+    // 如果state是对象 因为nextStateForKey !== previousStateForKey比较的是引用
+    // 那么 hasChanged认为是false没有发生改变 自然而然下面返回的state依然是旧的state
     return hasChanged ? nextState : state;
   };
 }
@@ -100,7 +103,8 @@ function assertReducerShape(reducers) {
   Object.keys(reducers).forEach(key => {
     //遍历reducer
     const reducer = reducers[key];
-    //先依次执行reducer 看是否有默认返回值state 其中ActionTypes.INIT为内部自定义的action 自然而然的执行到default 如果返回undefined 抛出错误 state要有默认值
+    //先依次执行reducer 看是否有默认返回值state 其中ActionTypes.INIT为内部自定义的action
+    // 自然而然的执行到default 如果返回undefined 抛出错误 state要有默认值
     const initialState = reducer(undefined, { type: ActionTypes.INIT });
 
     if (typeof initialState === "undefined") {
@@ -131,5 +135,5 @@ function assertReducerShape(reducers) {
   });
 }
 ```
-# 总结
+## 总结
 combineReducers的返回值实质上就是一个reducer函数，这个返回的reducer函数会把action传入各个子reducer中获取子state然后进行合并。
