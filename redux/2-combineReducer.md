@@ -62,14 +62,16 @@ export default function combineReducers(reducers) {
 
   let shapeAssertionError;
   try {
-    //assertReducerShape是一个错误处理函数判断子reducer在传入一个非预定好的action时 是否会返回默认的state
+    //assertReducerShape是一个错误处理函数
+    //判断子reducer在传入一个非预定好的action时 是否会返回默认的state
     assertReducerShape(finalReducers);
   } catch (e) {
     shapeAssertionError = e;
   }
 
   return function combination(state = {}, action) {
-    //state是否改变 这里判断state是否改变是通过浅比较的 所以才要求每次返回的state都是一个全新的对象
+    //state是否改变 这里判断state是否改变是通过浅比较的
+    // 所以才要求每次返回的state都是一个全新的对象
     let hasChanged = false;
     //新的state值 这里的state是根rootReducer的state
     const nextState = {};
@@ -87,7 +89,8 @@ export default function combineReducers(reducers) {
       }
       //循环执行reducer 把新的值进行存储
       nextState[key] = nextStateForKey;
-      //浅比较  这里把旧的子reducer state值 与传入action之后生成的state值进行浅比较 判断state是否改变了
+      //浅比较  
+      // 这里把旧的子reducer state值与传入action之后生成的state值进行浅比较 判断state是否改变了
       hasChanged = hasChanged || nextStateForKey !== previousStateForKey;
     }
     //根据判断赶回state   只要有一个子reducer hasChanged为true那么就重新返回新的nextState

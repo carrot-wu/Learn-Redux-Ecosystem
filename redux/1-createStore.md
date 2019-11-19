@@ -45,7 +45,7 @@ export default store;
 
 ## createStore
 
-首先要明白的就是 redux 本质就是一个具有增强功能(中间件)的发布订阅函数 subscribe 就是订阅 dispatch 就是发布通知订阅者执行相应的回调
+首先要明白的就是 redux 本质就是一个具有增强功能(中间件)的发布订阅函数 subscribe 就是订阅 dispatch 就是发布通知订阅者执行相应的回调</br>
 createStore 一开始会进行一系列的判断 判断是否传入了中间件（applyMiddleware（...）） 如果有的话直接返回 enhancer(createStore)(reducer, preloadedState) 没有的话继续执行下面的代码 声明了 dispatch subscribe getState replaceReudcer 这几个函数后直接进行返回
 
 ```javascript

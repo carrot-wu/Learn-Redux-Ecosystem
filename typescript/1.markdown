@@ -1,0 +1,124 @@
+>收集在学习`深入浅出TypeScript：从基础知识到类型编程`小册过程中所做的一些笔记，第1期为`泛型约束`,`索引查询keyof`,`索引访问T[K]`,`映射类型in`。
+## 泛型约束
+一般来说，传入的泛型可以任意定义。但是假设我们需要明确传入的泛型只能是固定几个类型的一种例如string | number，这时候就需要泛型约束。
+我们通过`<T extends xx>`的语法来约束传入的泛型。
+```ts
+type NameType = string | number
+
+interface Person1<T extends NameType> {
+  name:T;
+  age: number;
+}
+// 可行
+const person1: Person1<string> = {
+  name: 'cxk',
+  age: 12
+}
+// 可行
+const person2: Person1<number> = {
+  name: 100,
+  age: 12
+}
+// 报错 约束泛型只能为string和number类型
+const person3: Person1<boolean> = {
+  name: true,
+  age: 12
+}
+```
+![alt](http://pzxbfjvwp.bkt.clouddn.com/Fn8Nibe3cBXgY7RBhdSd0nDJ-Ii8)
+## 索引类型查询操作符 keyof
+typescript的keyof关键字，将一个**类型**映射为它所有成员名称的**联合类型**。注意是类型而不是具体值，所以keyof可以用于interface接口，type类型或者class类。返回的是一个联合类型。
+```ts
+interface Person {
+    name: string;
+    age: number;
+    location: string;
+}
+// 返回Person对象成员名称
+type K1 = keyof Person; // "name" | "age" | "location"
+// 返回数组对象成员名称
+type K2 = keyof Person[];  // "length" | "push" | "pop" | "concat" | ...
+// 返回{ [x: string]: Person }对象成员名称， 也就是string
+type K3 = keyof { [x: string]: Person };  // string
+```
+
+## 索引访问操作符 T[K]
+使用这么一种情况，我们需求需要获取的不是成员名称的联合类型，而不是成员对应的属性值类型的话那么该如何取呢。（按上面的Person的话，需求就是把Person的属性值类型全部获取出来 string | number）。
+
+这就需要索引访问符出场了，与 JavaScript 种访问属性值的操作类似，访问类型的操作符也是通过 [] 来访问的，即 T[K]。
+```ts
+interface Person {
+  name: string;
+  age: number;
+  location: string;
+}
+// 返回Person对象成员名称
+type K1 = keyof Person; // name" | "age" | "location
+// 获取Person成员对应属性值的类型
+type kValue = Person[K1] // string | number
+```
+### 使用实例
+```javascript
+实现lodash的pick方法 获取给定一个对象内的值
+const user = {
+    username: 'Jessica Lee',
+    id: 460000201904141743,
+    token: '460000201904141743',
+    avatar: 'http://dummyimage.com/200x200',
+    role: 'vip'
+}
+const res = pick(user, ['id', 'token', 'role'])
+// ['460000201904141743', '460000201904141743', 'vip']
+```
+ts实现
+```ts
+function pick<T, k extends keyof T>(obj:T, names: k[]): T[k][] {
+  return names.map(name => obj[name])
+}
+```
+这样子实现的pick在填写names也可以获得代码提示和检验
+![alt](http://pzxbfjvwp.bkt.clouddn.com/FtDGxJyUufLVdWGxtUrnV63LFEwR)
+## 映射类型 in
+假设我们要把下面的User全部转化为可选参数`?:`，这时候就需要使用到映射类型。
+
+```ts
+interface User {
+    username: string
+    id: number
+    token: string
+    avatar: string
+    role: string
+}
+```
+转化的本质是把`{key: value}` => 转化成`{key ?: value}`,因此问题转化成如何获取key和value。
+
+映射类型的语法是`[k in Keys]`
+1. 其中k是类型变量，依次绑定到每个属性上，对应每个属性名的类型。(或者说是联合类型中的某一个)
+2. Keys是**联合类型**，一组字符串属性名类型(type Keys = 'username' | 'id' ...)。
+
+获取具体属性值类型就可以通过索引操作表示为`T[K]`，把原有的参数转化为可选参数就可以表示为`[K in Keys]:T[k]`,其中Keys的属性名联合类型可以通过索引查询获取到`keyof T`。最终就可以写成`[K in keyof T] ?: T[K]`
+
+一步步的实现思维。
+1. 通过索引查询keyof获取User的属性名联合类型`keyof User`
+```ts
+type Keys = keyof User // 'username' | 'id' ...
+```
+2. 通过映射类型映射属性名联合类型`[K in Keys]`,这一步也就是转化的key
+3. 获取转化的value，通过obj[key]的方法获取value。也就是User[k]
+4. 一步步带入，最终返回的新类型就是`{[K in keyof User]: User[K]}`
+5. User类型可以通过泛型T来替代`type Partial<T> = {[K in keyof T] ?: T[K] }`
+
+具体实现：
+```ts
+interface Person3 {
+  name: string;
+  age: number;
+  location: string;
+}
+
+type Partial<T> = {[K in keyof T] ?: T[K] }
+type PersonPartial = Partial<Person3>
+
+```
+![alt](http://pzxbfjvwp.bkt.clouddn.com/Fsvysj9Te-GBt1QoTWXHz23tMSyq)
+

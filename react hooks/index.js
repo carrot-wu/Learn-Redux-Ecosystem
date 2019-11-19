@@ -23,7 +23,6 @@ function Demo() {
 // 依赖项函数问题
 function Demo() {
   const [count, setCount] = useState(0);
-
   function awaitdata(query) {
     return `http://demo${query}`
     // return `http://demo${query}${count}`

@@ -1,3 +1,8 @@
+
+## 函数抖动
+
+一定时间内连续触发事件不会执行
+```javascript
 /**
  *
  * @param fn 抖动函数
@@ -5,7 +10,8 @@
  * @returns {Function}
  */
 var debounce = function (fn, delay) {
-  var _arguments = Array.prototype.slice.call(arguments, 2) //获取参入的参数
+  //获取参入的参数
+  var _arguments = Array.prototype.slice.call(arguments, 2) 
   var timer = null
   return function () {
     var that = this
@@ -16,7 +22,11 @@ var debounce = function (fn, delay) {
     }, delay)
   }
 }
+```
 
+## 函数节流
+
+```javascript
 /**
  * 按给定的时间延迟执行一次事件
  * @param fn 抖动函数
@@ -24,7 +34,8 @@ var debounce = function (fn, delay) {
  * @returns {Function}
  */
 var throttle = function (fn, delay) {
-  var _arguments = Array.prototype.slice.call(arguments, 2) //获取参入的参数
+   //获取参入的参数
+  var _arguments = Array.prototype.slice.call(arguments, 2)
   var timer = null
   return function () {
     var that = this
@@ -36,8 +47,11 @@ var throttle = function (fn, delay) {
 
   }
 }
+```
 
+## apply和call的模拟实现
 
+```javascript
 /**
  * apply的模拟实现， call类似
  * @param context 被修改的this指向
@@ -45,7 +59,8 @@ var throttle = function (fn, delay) {
  * @returns {*}
  */
 
-// 原理其实是用过隐形绑定 对象调用的方法来设置this的指向 所以要把传入的this设置为对象这样子进行调用
+// 原理其实是用过隐形绑定 对象调用的方法来设置this的指向
+// 所以要把传入的this设置为对象这样子进行调用
 Function.prototype.myApply = function (context, args = []) {
   //注意的是如果传入的是undefined或者null 都是不绑定this 用自身的this
   let targetContext = (context === void 0 || context === 'null') ? this : context
@@ -57,7 +72,10 @@ Function.prototype.myApply = function (context, args = []) {
   delete targetContext[targetKey]
   return result
 }
+```
 
+## bind的模拟实现
+```javascript
 //var a = b.bind(this,参数)
 /**
  *  bind的模拟实现
@@ -76,6 +94,10 @@ Function.prototype.myBind = function (context) {
   return _fun
 }
 
+```
+
+## new的模拟实现
+```javascript
 // new 的模拟实现
 // var a = b.MyNew(参数)
 /**
@@ -89,7 +111,10 @@ Object.prototype.MyNew = function () {
   var result = this.apply(obj, Array.prototype.slice.call(arguments))
   return typeof result === 'object' ? result : obj
 }
+```
 
+## 数组扁平化
+```javascript
 //数组扁平化
 Array.prototype.flatten = function () {
   return this.reduce(function (prev, cur) {
@@ -103,7 +128,10 @@ Array.prototype.flatten = function () {
 }
 console.log([1, 2, 3, [122, 12, [12], [4, 5, 6]], [12, [13, [14]]]].flatten())
 
+```
 
+## 函数柯丽化
+```javascript
 //函数柯丽化
 /**
  *
@@ -135,6 +163,10 @@ console.log(curryAdd(1)(2)(3))
 console.log(curryAdd(1, 2)(3))
 console.log(curryAdd(1, 2))
 
+```
+## compose方法
+
+```javascript
 // compose 方法 摘自redux中的源码
 /**
  *
@@ -183,8 +215,10 @@ const middlewre2 = createMiddleware('2222')
 const testCompose = compose( middlewre1, middlewre2,firstMiddleware)
 testCompose(() => {console.log('first')})
 */
+```
 
-
+## 原生图片懒加载方法
+```javascript
 //懒加载
 /**
  * 原生懒加载效果
@@ -210,24 +244,26 @@ function lazyLoad (selector, distance = 50) {
       }
     }
   }
-
   //这里可以添加节流
   window.addEventListener('scroll', throttle(_lazyLoad, 200), false)
 }
+```
 
+## 取数组最大值方法
+```javascript
 //取数组最大值
 /**
- *
  * @param array 数组
  * @returns {number} 最大的数字
  */
 function getArrayMax (array) {
   return Math.max.apply(null, array)
 }
+```
 
-// dom操作的一些遍历
 
-//遍历某个dom节点下的所有节点树
+## 遍历某个dom节点下的所有节点树
+```javascript
 const _length = document.querySelectorAll('body *').length
 
 // 给定节点 打印所有出现在的标签以及出现次数 使用的标签也可以显示出来 https://github.com/shiyangzhaoa/easy-tips/blob/master/tips/dom_depth.md
@@ -240,7 +276,6 @@ const getEleObject = (node) => {
   if (!node.children.length) {
     return {}
   }
-
   return (function getDomTree (node, parentObject = {}) {
     return Array.from(node.children).reduce((obj, cur) => {
       const eleKey = cur.tagName.toLowerCase()
@@ -251,13 +286,15 @@ const getEleObject = (node) => {
 }
 const body = document.querySelector('body')
 getEleObject(body)
+```
 
+## 求dom节点最深和最宽
+```javascript
 // 求dom节点的最深长度以及dom数的宽度 这里的方法是不加算字符串的深度的
 const getDomDeep = (node) => {
   let maxDeep = 0
   let maxWidth = 0
   if (!node.children.length) return { maxDeep, maxWidth }
-
   function getLength (node, deep) {
     deep += 1
     Array.from(node.children).forEach(item => {
@@ -269,11 +306,14 @@ const getDomDeep = (node) => {
       }
     })
   }
-
   getLength(node, 0)
   return { maxDeep, maxWidth }
 }
 
+```
+
+## 获取dom节点所有分支数
+```javascript
 /**
  * 获取dom节点的所有分支
  * @param node dom节点
@@ -282,7 +322,7 @@ const getDomDeep = (node) => {
 const getDomTree = (node) => {
   const treeArray = []
   if (!node.children.length) return []
-
+  
   function getDom (node, parentTagName) {
     Array.from(node.children).forEach(childNode => {
       const currentTreeTagName = `${parentTagName ? parentTagName : node.tagName.toLowerCase()}--${childNode.tagName.toLowerCase()}`
@@ -298,12 +338,17 @@ const getDomTree = (node) => {
   return treeArray
 }
 
+```
+
+## 数组乱序（错误版以及正确版）
+```javascript
 // 数组的乱序
 
 function arraySplit (array) {
   return array.sort(() => Math.random() > 0.5)
 }
-// 上面的乱序其实是不准确的 因为在chrome中对于sort方法 如果数组长度小于10 那么就用插入排序 不然就用快速排序
+// 上面的乱序其实是不准确的 因为在chrome中对于sort方法
+// 如果数组长度小于10 那么就用插入排序 不然就用快速排序
 // 对于插入排序或者快速排序 其实有可能一半的数值都不用进行比较就确定值了
 
 // 参考洗牌算法才是真正的乱序
@@ -320,8 +365,10 @@ const d = function (array) {
   }
   return array
 }
+```
 
-//简易的深拷贝
+## 简易的深拷贝
+```javascript
 /**
  *
  * @param object 深拷贝对象
@@ -331,16 +378,15 @@ function deepCopy (object) {
   var isObject = function (target) {
     return (typeof (target) === 'object' && object !== null)
   }
-
   var _returnObject = Array.isArray(object) ? [] : {}
-
   if (!isObject(object)) {
     throw new Error('深拷贝对象必须为数组或者对象哦')
   }
   //遍历对象
   for (var key in object) {
     if (object.hasOwnProperty(key)) {
-      //如果key值是null的话 直接进行赋值 如果不做这一步的话会在上面直接返回一个false值
+      //如果key值是null的话 直接进行赋值
+      // 如果不做这一步的话会在上面直接返回一个false值
       if (object[key] === null) {
         _returnObject[key] = object[key]
       } else if (isObject(object[key])) {
@@ -362,25 +408,14 @@ test[2][3].push('test')
 test[3].key = 'test'
 test[5] = '1111'
 console.log(testObject)
+```
 
-// lodash的get方法 安全取值
-
-Object.prototype.safeGet = function(array) {
-  // 不能使用箭头函数 不然this指向window
-  if(!Array.isArray(array)){
-    throw new Error('参数必须为数组')
-  }
-  return array.reduce((cur, val) => {
-    return (cur && cur[val]) ? cur[val] : null
-  }, this)
-}
-//lazyman
-
+## lazyman
+```javascript
 class LazyMan {
   constructor (name) {
     this.name = name
     this.task = []
-
     let consoleName = () => {
       console.log(`i am lazyName ${this.name}`)
       this.next()
@@ -390,19 +425,15 @@ class LazyMan {
       console.log('start')
       this.next()
     }, 0)
-
   }
 
   sleep (time) {
-
     let _sleep = () => {
-
       setTimeout(() => {
         console.log(`${this.name} sleep ${time} alearady`)
         this.next()
       }, time * 1000)
     }
-
     this.task.push(_sleep)
     return this
   }
@@ -419,7 +450,6 @@ class LazyMan {
   next () {
     //每次执行完一个任务获取下一个任务 并且去除一开始的任务
     let nextTask = this.task.shift()
-
     //console.log(nextTask)
     nextTask && nextTask()
   }
@@ -428,7 +458,10 @@ class LazyMan {
 let man = new LazyMan('wuhr')
 man.sleep(0.5).eat('fan').sleep(4).eat('zhopu')
 
+```
 
+## 实现一个eventEmitter
+```javascript
 //实现一个eventEmitter
 class EventEmitter {
   constructor (maxLength = 10) {
@@ -440,7 +473,6 @@ class EventEmitter {
     //判断是否已经添加了这个方法了 如若添加了的话必须放进去一个数组中 超过的话直接报错
     if (this._events[type] && this._events[type].length === this.maxLength) throw new Error(`超出${this.maxLength}个监听事件限制啦`)
     this._events[type] = this._events[type] ? [...this._events[type], cb] : [cb]
-
   }
 
   emitEvents (type, ...args) {
@@ -458,9 +490,7 @@ class EventEmitter {
       cb && cb.apply(this, args)
       //调用完成之后删除这个监听器
       this.removeListner(type, onceListners)
-
     }
-
     this.addListners(type, onceListners)
   }
 
@@ -475,10 +505,8 @@ class EventEmitter {
         if (cur !== cb) {
           prev.push(cur)
         }
-
         return prev
       }, [])
-
     }
   }
 
@@ -509,10 +537,11 @@ _test.addListners('hhh', (data) => {
   console.log('hhh222' + data)
 })
 _test.emitEvents('hhh', 123)
-
 _test.emitEvents('hhh1', 123)
+```
 
-
+## promise 模拟实现
+```javascript
 // promise模拟实现 其实原理与发布订阅模式类似
 class MyPromise {
   constructor (executor) {
@@ -544,7 +573,6 @@ class MyPromise {
           this.status = this.statusMap.reject
           this.rejectValue = rejectValue
           this.resolveFnArray.forEach(rejectFn => rejectFn && rejectFn(rejectValue))
-
         }, 0)
       }
     }
@@ -573,7 +601,9 @@ class MyPromise {
     return this
   }
 }
-
+```
+## 大数相加方法（只允许字符串）
+```javascript
 /**
  * 计算大数相加值
  * @param stringArray 大数数组
@@ -601,12 +631,10 @@ function bigNumSum (...stringArray) {
   const totalArray = []
   // 是否进一 大于10的话 默认为0
   let isUpperOne = 0
-
   // 获取index值的相加和
   function getLengthResult (index) {
     return fillStringArray.reduce((prev, cur) => prev + Number(cur[index]), 0)
   }
-
   for (let i = fillStringArray[0].length; i > 0; i--) {
     // 求数组的相加值
     const result = isUpperOne + getLengthResult(i - 1)
@@ -627,8 +655,10 @@ function bigNumSum (...stringArray) {
 }
 
 const __test = bigNumSum('9111111111111119', '922222222222222222219', '9321111111113213119', '9213123123119')
+```
 
-
+## 正则表达式获取url的query参数
+```javascript
 /*
 * 正则表达式获取url query
 *
@@ -642,37 +672,10 @@ const c = b.match(/([?&])([^?&#]+=[^&#]*)/g).reduce((obj, item) => {
   },
   {}
 )
+```
 
-//const a = {b:1, c:{d:2, f:{k:2}}}
-//a.safeGet(['c', 'd', 'f', 'k'])
-
-// 两个共存 一个执行完执行下一个
-// const a = [{delay: 1, text: '我是第一个'},{delay: 1, text: '我是第2个'},{delay: 2, text: '我是第3个'},{delay: 2, text: '我是第4个'},{delay: 2, text: '我是第5个'}]
-//
-// async function test(array, num) {
-//   function delay(cb, delay) {
-//     return new Promise((resolve,reject) => {
-//       setTimeout(() => {
-//         cb && cb()
-//         resolve()
-//       },delay)
-//     })
-//   }
-//   let delayArray = array.map(({delay: time, text}) => {
-//     return () => {
-//       delay(() => console.log(text), time * 1000)
-//         .then(() => {
-//           const next = delayArray.shift()
-//           return next && next()
-//         })
-//     }
-//   })
-//   for (let i = 0; i < num ; i ++){
-//     const next = delayArray.shift()
-//     next && next()
-//   }
-// }
-// test(a, 2)
+## 任务调度器（头条面试题）
+```javascript
 /* 任务调度器*/
 class Scheduler {
   constructor() {
@@ -715,3 +718,4 @@ addTask(1000, '1')
 addTask(500, '2')
 addTask(300, '3')
 addTask(400, '4')
+```

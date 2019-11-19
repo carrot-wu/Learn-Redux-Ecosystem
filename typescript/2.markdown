@@ -1,0 +1,150 @@
+>收集在学习`深入浅出TypeScript：从基础知识到类型编程`小册过程中所做的一些笔记，第2期为`条件类型`。
+## 条件类型
+一般来说，在不确定具体类型的时候可以通过泛型来传入使用泛型，但是有时候我们无法确定使用哪个泛型。或者说具体使用哪个类型依赖于外部或者内部的某些条件，这就有点类似于js中的条件判断语句`if(){} else{}`，因此ts引入了条件类型。
+
+条件类型够表示非统一的类型,以一个条件表达式进行类型关系检测，从而在两种类型中选择其一.ts中的条件类型使用方法类似于js中的三目运算符：
+```ts
+type Test<T,U> = T extends U ? X : U
+//若 T 能够赋值给 U，那么类型是 X，否则为 Y
+```
+>只有相应的条件匹配了，条件类型才会匹配出相应的类型。看起来与三目运算符一样是挺简单的，事实上并非如此。
+```ts
+// 下面是两个使用条件类型的例子
+// 根据三目我以为第一个返回的是T即 string | number
+// 第二个返回 never类型
+// 事实上并非如此
+type Same<T, U> = T extends U ? T : never;
+type same = Same<string | number, number>;  // 返回的是number
+
+type Diff<T, U> = T extends U ? never : T;
+type diff = Diff<string | number, number | boolean>;  // 返回的是string
+```
+那么问题出在哪里呢？其实是因为例子中条件类型T是**联合类型**，如果T类型不是联合类型那么是符合三目运算符的正常逻辑的。接下来我们先放开这个例子，直接探究具体的原因。
+
+## 条件类型与联合类型
+> 以下部分内容节选自《深入浅出typescript》小册
+
+条件类型有一个特性,就是「分布式有条件类型」,但是分布式有条件类型是有前提的,条件类型里待检查的类型必须是`naked type parameter`。
+
+好了,肯定有人已经晕了,什么是分布式有条件类型?`naked type parameter`又是什么?
+
+`naked type parameter`指的是**裸类型参数**,怎么理解?这个「裸」是指类型参数没有被包装在其他类型里,比如没有被数组、元组、函数、Promise等等包裹。
+
+我们举个简单的例子:
+```ts
+// 裸类型参数,没有被任何其他类型包裹即T
+type NakedUsage<T> = T extends boolean ? "YES" : "NO"
+// 类型参数被包裹的在元组内即[T]
+type WrappedUsage<T> = [T] extends [boolean] ? "YES" : "NO";
+```
+好了,`naked type parameter`我们了解了之后,「**分布式有条件类型**」就相对容易理解了,按照官方文档的说法是「**分布式有条件类型在实例化时会自动分发成联合类型**」。
+
+这个说法很绕,我们直接看例子:
+```ts
+type Distributed = NakedUsage<number | boolean> //  = NakedUsage<number> | NakedUsage<boolean> =  "NO" | "YES"
+type NotDistributed = WrappedUsage<number | boolean > // "NO"
+```
+当我们给类型`NakedUsage`加入联合类型`number | boolean`时,它的结果返回`"NO" | "YES"`,相当于联合类型中的number和boolean分别赋予了`NakedUsage<T>`然后再返回出一个联合类型,这个操作大家可以类比JavaScript中的Array.map()。
+
+我们看`NotDistributed`的结果,他接受的同样是联合类型`number | boolean`,但是返回一个特定的类型"NO",而非一个联合类型,就是因为他的类型参数是被包裹的即[`<T>`],不会产生分布式有条件类型的特性。
+
+**总结：** 在条件类型中如果类型没被包裹（**裸类型参数**）并且是**联合类型**的话就会在实例化时自动分化成**联合类型**。
+所以回顾之前的例子：
+```ts
+// Same 和 Diff的类型都是裸类型参数并且是联合类型
+// 所以其实实例化时的会自动分化成联合类型
+type Same<T, U> = T extends U ? T : never;
+type same = Same<string | number, number>;  // 返回的是number
+// 转化成下面的这个类型 这样子就不难得出是number类型了
+type equalSame = Same<string, number> | Same<number, number> //返回number
+
+type Diff<T, U> = T extends U ? never : T;
+type diff = Diff<string | number, number | boolean>;  // 返回的是string
+// 同理转化为
+type equalDiff = Diff<string, number> | Same<number, number> //返回string
+```
+## 条件类型，映射类型和索引类型的高级使用
+假设我有一个interface类型，现在我需要编写一个工具类型。这个工具类型接受一个U泛型把interface中符合U泛型的类型全部筛选出来组成一个新的接口interface。
+
+```ts
+interface Part {
+  id: number;
+  name: string;
+  subparts: Part[];
+  updatePart(newName: string): void;
+}
+
+type FilterInterface<T, U> = 如何编写
+
+type FilterNumber = FilterInterface<Part, number>
+/* 
+type FilterNumber = {
+    id: number;
+}
+*/
+
+type FilterNumberOrFunction = FilterInterface<Part, number | Function>;
+/* 
+type FilterNumberOrFunction = {
+    id: number;
+    updatePart: (newName: string) => void;
+}
+*/
+```
+实际效果图:  
+![alt](http://img.carrotwu.com/FpWwi3kdfndslRsj-T721K72UeHs)
+### 接下来一步一步的分析拆解  
+1. 首先通过`keyof T`索引类型获取T的**字符串联合类型**。
+![alt](http://img.carrotwu.com/FrvEt1UZStCJUKrs_Q7V4JAfh0Qe)
+2. 通过映射类型`[K in keyof T]`获取到每一个键值字符串,通过`T[K]`获取到每一个interface的value。这时K相当于interface的key,`T[K]`相当于interface的value。<br>
+![alt](http://img.carrotwu.com/FoPwhTgldlic-YdBkpDrakvySWQO)
+
+3. 通过条件类型`T[K] extends U ? K : never`验证当前的`T[K]`是否符合传入的泛型U。是的话把映射出来的类型K（相当于interface的key）保留下来（后面有用）,不是的话保留`never`。
+4. 通过`{ [K in keyof T] : T[K] extends U ? K : never}`获取符合泛型U的新interface，不符合的会被置为`never`类型。<br>
+![alt](http://img.carrotwu.com/Fi2dyrAb5emS_dZBLGpgkIeZZFqR)
+
+5. 通过`({ [K in keyof T] : T[K] extends U ? K : never})[keyof T]`再次使用索引类型获取不为`never`类型的联合类型key。
+![alt](http://img.carrotwu.com/Fsgmg81I_mvqCart0favXg4UZGuX)
+
+6. 使用内置的`Pick`工具类型把第五步的字符串联合类型转化为最终的interface接口。
+![alt](http://img.carrotwu.com/FnURanesnA97OjwtkqNVxYvNg19F)  
+其中Pick<T,K>是内置函数，作用是从`T`中取出一系列`K`的属性。具体使用方法以及原理可以见下图。
+![alt](http://img.carrotwu.com/FtZcwVPln8BIEs9iMkP91P4JN8RQ)
+
+7. 用泛型`T,U`替换相应的类型就得到了最终的类型工具。
+```ts
+type FilterInterface<T, U extends T[keyof T]> = Pick<T,({[K in keyof T]: T[K] extends U ? K : never})[keyof T]>
+interface Part {
+    id: number;
+    name: string;
+    subparts: Part[];
+    updatePart(newName: string): void;
+  }
+  type Test = FilterInterface<Part, string | ((...arg: any[]) => void)>
+  /* 
+  type Test = {
+    name: string;
+    updatePart: (newName: string) => void;
+}
+  */
+```  
+
+## 总结
+**索引类型，条件类型， 映射类型**的组合常用来做一些工具类型，ts的内置类型工具如`Pick,Exclude`等都是借用三个高级类型编写而来。
+
+对于一些复杂的工具库而言，普遍的思想是通过映射类型和索引类型获取到需要的字符串类型接口如上面的步骤3的接口。
+```ts
+type R = {
+    id: 'id';
+    name: never;
+    subparts: never;
+    updatePart: never;
+}
+```
+**其中对于不需要或者需要删除的类型，值赋值给`never`,需要保留的类型就把相应的`key`名赋值给`value`，就如`id: 'id'`。这样子在通过一次索引类型获取到需要的联合类型字符串`'id' | 'name'`。最后通过相应的工具类型例如`Pick`达到最终需要的类型。**
+
+
+
+
+
+
