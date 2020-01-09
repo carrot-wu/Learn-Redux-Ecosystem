@@ -79,7 +79,7 @@ function pick<T, k extends keyof T>(obj:T, names: k[]): T[k][] {
 这样子实现的pick在填写names也可以获得代码提示和检验
 ![alt](http://pzxbfjvwp.bkt.clouddn.com/FtDGxJyUufLVdWGxtUrnV63LFEwR)
 ## 映射类型 in
-假设我们要把下面的User全部转化为可选参数`?:`，这时候就需要使用到映射类型。
+假设我们要把下面的User全部转化为可选参数`?:`，ts中内置了`Partial`工具类型，能够将它所有的属性设置为可选的，那么我们改如何实现一个自己的`Partial`工具类型呢
 
 ```ts
 interface User {
@@ -89,6 +89,16 @@ interface User {
     avatar: string
     role: string
 }
+type UserPartial = Partial<Person3>
+/* 
+type UserPartial = {
+  username?: string
+  id?: number
+  token?: string
+  avatar?: string
+  role?: string
+}
+ */
 ```
 转化的本质是把`{key: value}` => 转化成`{key ?: value}`,因此问题转化成如何获取key和value。
 
@@ -116,9 +126,43 @@ interface Person3 {
   location: string;
 }
 
-type Partial<T> = {[K in keyof T] ?: T[K] }
-type PersonPartial = Partial<Person3>
+type MyPartial<T> = {[K in keyof T] ?: T[K] }
+type PersonPartial = MyPartial<Person3>
 
 ```
-![alt](http://pzxbfjvwp.bkt.clouddn.com/Fsvysj9Te-GBt1QoTWXHz23tMSyq)
+![alt](http://pzxbfjvwp.bkt.clouddn.com/Fsvysj9Te-GBt1QoTWXHz23tMSyq)  
+同理，内置工具类型`Pick`,`Readonly`, `Required`也就不难实现出来啦。  
 
+```ts
+interface Person4 {
+  name: string;
+  age: number;
+  location: string;
+}
+// Readonly用于将成员所有属性置为readonly，无法再次赋值
+type MyReadonly<T> = {readonly [K in keyof T] : T[K] }
+type PersonReadOnly = MyReadonly<Person4>
+/* 
+type PersonReadOnly = {
+    readonly name: string;
+    readonly age: number;
+    readonly location: string;
+}
+*/
+
+// Required用于将成员所有属性置为必填参数，与Partia相反
+type MyRequired<T> = {[K in keyof T] -?: T[K]}
+type PersonRequired = MyRequired<Person4>
+
+// Pick接受两个泛型T,U 从T类型中挑选出U类型的属性生成一个新的类型，而且泛型U必须是T类型的字符串联合类型的子集
+type MyPick<T, U extends keyof T> = {[P in U] : T[P] }
+// 泛型约束的关系只能传入 name age location的联合类型
+type PersonPick = MyPick<Person4,'name'| 'age'>
+
+/* 
+type PersonPick = {
+    name: string;
+    age: number;
+}
+*/
+```

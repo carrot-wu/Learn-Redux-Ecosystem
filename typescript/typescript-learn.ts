@@ -182,3 +182,44 @@ class ff extends hh {
 }
 new ff()
 //new hh() 报错
+
+
+
+interface Methods<T> {
+  [keys: string]: (value: T, ...args: any[]) => T;
+}
+
+type FilterFirstFn<T, U> = T extends (value:U, ...args: infer P) => void ? (...args: P) => void : T;
+
+type ReturnMethods<U,T> = {
+  [P in keyof U]: FilterFirstFn<U[P], T>;
+}
+function useReducerHook<T, K extends Methods<T>, U extends keyof K>(
+  initState: T,
+  methods: K
+): [T, ReturnMethods<K, T>] {
+  const [value, setValue] = useState<T>(() => initState);
+  const boundMethods = Object.keys(methods).reduce((newMethods, name) => {
+    const fn = methods[name];
+    // @ts-ignore
+    newMethods[name] = (...args: any[]) => {
+      setValue(value => fn(value, ...args));
+    }
+    return newMethods;
+  }, {} as ReturnMethods<K, T>);
+  return [value, boundMethods];
+}
+
+const c = {
+  get(state: string, test: number) {
+    return state.slice() + test;
+  },
+  add(state: string) {
+    return state + "-";
+  }
+}
+
+const [value, hhhh] = useReducerHook("测试", c);
+
+hhhh.get(123)
+
