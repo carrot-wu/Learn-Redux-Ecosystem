@@ -1,0 +1,339 @@
+>自己博客中使用到并且进行封装的自定义hooks。全手打自己实现`。
+## usePromise
+一般来说，对于每一次发起的网络请求。其实都是有一些通用的公共逻辑，比如请求中的loading状态，错误处理的方法。数据的公共处理，在博客中对请求方法进行了封装这就是**usePromise**的由来。
+### 源码实现
+```ts
+import {useCallback, useState} from 'react';
+import {isArray, isPlainObject} from "utils/checkType";
+
+export interface IResponseConfig<T = any> {
+  resultCode: number
+  resultMsg: string
+  status: number
+  data: T
+}
+
+// 获取函数的参数类型
+export type ReturnParamsType<T extends (...args: any[]) => any> = T extends (...args: infer P) => any ? P : any;
+
+// 限制传入的函数类型
+type PromiseFn<U> = (...params: any[]) => Promise<IResponseConfig<U>>
+
+// 一些默认的配置
+interface PromiseOptions {
+  // 默认数值， 用于初始化时的显示
+  defaultData?: any;
+  reqInterceptors?: () => void;
+  resInterceptors?: () => void;
+}
+
+// 返回的对象类型
+interface PromiseRes<U, T> {
+  // 用于进行调用的方法
+  loadFn: T;
+  // loading状态
+  loading: boolean;
+  // 请求的返回值
+  res: IResponseConfig<U>;
+  // 请求错误时的error
+  error: Error | null;
+}
+
+// 函数重载
+function usePromise<U, T extends PromiseFn<U>>(
+  loadFn: T,
+): PromiseRes<U,T>;
+function usePromise<U, T extends PromiseFn<U>>(
+  loadFn: T,
+  depListOrOptions: any[] | PromiseOptions
+): PromiseRes<U,T>;
+function usePromise<U, T extends PromiseFn<U>>(
+  loadFn: T,
+  depList: any[],
+  options: PromiseOptions
+): PromiseRes<U,T>;
+
+/**
+ * 用于封装请求的自定义hooks方法
+ * @param {T} loadFn promise方法
+ * @param {any[] | PromiseOptions} depList 依赖数组
+ * @param {PromiseOptions} options 一些自定义的配置
+ * @returns {PromiseRes<U, T>}
+ */
+function usePromise<U, T extends PromiseFn<U>>(
+  loadFn: T,
+  depList?: any[] | PromiseOptions,
+  options?: PromiseOptions,
+): PromiseRes<U,T> {
+  //重载
+  let _options:PromiseOptions
+  let _depList: any[]
+  _depList = isArray(depList) ? depList : []
+  _options = (isPlainObject(depList) && !isArray(depList)) ? depList : (options || {})
+
+  const {defaultData = {data: {}}} = _options;
+  const [loading, setLoading] = useState(true);
+  const [data, setData] = useState<IResponseConfig<U>>(defaultData);
+  const [error, setError] = useState<Error | null>(null);
+
+  const initLoad = useCallback(async (...params: ReturnParamsType<T>) => {
+    try {
+      setError(null);
+      setLoading(true);
+      const result = await loadFn(...params);
+      setData(result);
+      setLoading(false);
+      return result
+    } catch (e) {
+      setLoading(false);
+      setError(e);
+      return Promise.reject(e)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [..._depList])
+
+  return {
+    loadFn: initLoad as T,
+    res: data,
+    loading,
+    error,
+  };
+}
+
+export default usePromise
+```
+### 使用
+```tsx
+const Post:React.FC = () => {
+  // 只需要传入一个promise函数 然后节后获得一个loadFn函数 在需要的地方调用即可
+  // res和loading变量会进行更新
+  // 依托于ts的强大之处 如果通过ts定义了getArticleById的返回类型 那么在data中也会进行相应的代码提示
+  const { loadFn: getArticleDetail, res: {data}, loading } = usePromise(
+    async (id: string) => getArticleById({id}),
+    [id]
+  );
+  const {title, content = '', createdStamp} = data
+  useEffect(() => {
+    if(!id){
+      //不存在id
+      history.replace('/home')
+    }else {
+      getArticleDetail(id)
+    }
+    // eslint-disable-next-line
+  }, [id])
+
+  return (
+    <div className="content">
+      {loading ?
+        <div className="post-loading">
+          <Loading size={50}>文章加载中</Loading>
+        </div>
+        :
+        <div className="post">
+        {content}
+        </div>
+      }
+
+    </div>
+  )
+}
+
+```
+## useSetState
+可能刚接触hooks的**setXXX**函数时大家会感觉到有一部分的不适应，因为该函数对于对象并不像class组件的**setState**一样对象之间进行合并更新，需要通过结构或者**Object.assing**进行返回一个新的对象。对于偷懒的我来说是无法忍受的。当然强大的hooks也可以模拟出class组件的**setState**的方法，我这里同时也允许传入第二个参数用于渲染后的回调操作。
+
+### 源码
+```ts
+import {useCallback, useState, useEffect, useRef} from "react";
+import {isFunction} from "utils/checkType";
+
+// 约束传入useSetState的类型
+type ISetState<U> = U | ((...args: any[]) => U)
+
+// 返回方法的参数类型 setState() 允许接收两种参数 传统的直接对象数据 或者是一个函数 函数的话参数是上一次state的值
+type ReturnStateMethods<U> = Partial<U> | ((state: U) => Partial<U>)
+
+type ReturnSetStateFn<T> = (state: ReturnStateMethods<T>, cb?: (...args: any[]) => void) => void
+/**
+ * 模拟class组件的setState方法
+ * @param {ISetState<T>} initObj
+ * @returns {[T, ((state: ReturnStateMethods<T>) => void)]}
+ */
+export default function useSetState<T extends object>(initObj:ISetState<T>): [T, ReturnSetStateFn<T>] {
+  const [state, setState] = useState<T>(initObj)
+  const executeCb = useRef<(...args: any[]) => void>()
+  const newSetState = useCallback<ReturnSetStateFn<T>>((state, cb) => {
+    let newState = state
+    setState((prevState:T) => {
+      executeCb.current = cb
+      if(isFunction(state)){
+        newState = state(prevState)
+      }
+      return {...prevState, ...newState}
+    })
+  }, [])
+  useEffect(() => {
+    const {current: cb} = executeCb
+    isFunction(cb) && cb()
+    // eslint-disable-next-line
+  }, [executeCb.current])
+  return [state, newSetState]
+}
+```
+
+### 使用
+
+```tsx
+const Post:React.FC = () => {
+  interface Detail {
+    time: number,
+    test: string
+  }
+  // useSetState必须接受一个对象
+  const [detail, setDetail] = useSetState<Detail>({test: '123', time: new Date().getTime()})
+  const onChangeTime = useCallBack(() => {
+    // 需要修改啥就传啥即可
+    setDetail({
+      time: new Date().getTime()
+    }, () => {
+      // 这次render完之后可进行的回调操作
+    })
+  })
+  return (
+    <div className="content" onClick={onChangeTime}>
+      {loading ?
+        <div className="post-loading">
+          <Loading size={50}>文章加载中</Loading>
+        </div>
+        :
+        <div className="post">
+        {content}
+        </div>
+      }
+
+    </div>
+  )
+}
+```
+
+## useMethods
+**useMethods**是我在看知乎时一位大佬提供的思路以及代码编写完成（相关的ts类型提示以及检查是我写的，源码并不是我）。这个方法提供了通用封装方法的思路[**知乎链接**](https://www.zhihu.com/question/357020049/answer/909484669 "html")。简单说就是**给我一个值和一堆方法，我帮你变成hook**。
+
+### 源码
+```ts
+import {useState} from 'react'
+
+// 筛选出符合函数的类型
+
+type FilterMethods<K, U> = {
+  [P in keyof K]: K[P] extends (value: U, ...args: any[]) => U ? K[P] : never
+}
+
+// 获取除了state本身自外的其他函数参数
+type GetExtraParams<U, T> = U extends (value: T, ...args: infer P) => void ? P : never
+
+// 映射类型生成返回的函数对象
+type ReturnMethods<U, T> = {
+  [P in keyof U]: (...args: GetExtraParams<U[P], T>) => void;
+}
+
+/**
+ *  接受一个值和方法进行hooks化
+ * @param {T} initState 初始化值
+ * @param {K} methods 需要hooks话的方法
+ * @returns {[T, ReturnMethods<K, T>]}
+ */
+function useMethods<T, K extends FilterMethods<K, T>>(
+  initState: T,
+  methods: K
+): [T, ReturnMethods<K, T>] {
+  const [value, setValue] = useState<T>(() => initState);
+  const methodsTypes = Object.keys(methods) as Array<keyof K>
+  const boundMethods = methodsTypes.reduce((newMethods, name) => {
+    const fn = methods[name];
+    if (typeof fn === 'function') {
+      newMethods[name] = (...args: any[]) => {
+        setValue(value => fn(value, ...args));
+      }
+    }
+    return newMethods;
+  }, {} as ReturnMethods<K, T>);
+  return [value, boundMethods];
+}
+
+export default useMethods
+
+```
+
+### 使用
+在上面的`useMethods`的帮助下，我们可以二次封装很多常用的方法集合比如说数组的自定义hooks，数字加一减一的自定义hooks等等等等。放开来说，可以把一个模块通用的utils方法全部通过`useMethods`进行hooks化。在下面举几个我使用过的hooks。
+```ts
+// useNumber
+import useMethods from "./useMethods"
+
+interface UseNumberMethods<T = number> {
+  increment:(value:T) => T
+  decrement:(value:T) => T
+  add:(value:T, num: number) => T
+  dec:(value:T, num: number) => T
+}
+const methods:UseNumberMethods = {
+  increment(value) {
+    return value + 1;
+  },
+  decrement(value) {
+    return value - 1;
+  },
+  add(value, num: number){
+    return value + num
+  },
+  dec(value, num: number){
+    return value - num
+  }
+}
+
+/**
+ *
+ * @param {number} initState 初始值
+ * @returns {[number, ReturnMethods<UseNumberMethods<number>, number>]}
+ */
+function useNumber(initState: number) {
+  return useMethods(initState, methods)
+}
+
+// useArray
+interface UseArrayMethods<T extends any[]> {
+  plainPush:(value:T, ...args: T) => T
+  plainPop:(value:T) => T
+  plainUnshift:(value:T, ...args: T) => T
+  plainShift:(value:T) => T
+}
+
+/**
+ *
+ * @param {boolean} initState 初始值
+ * @returns {[number, ReturnMethods<UseNumberMethods<number>, number>]}
+ */
+function useArray<T>(initState: T[]) {
+  const methods:UseArrayMethods<T[]> = {
+    plainPush(value, ...args) {
+      return [...value, ...args]
+    },
+    plainPop(value) {
+      return value.slice(0, -1)
+    },
+    plainUnshift(value, ...args) {
+      return [...args, ...value]
+    },
+    plainShift(value) {
+      return value.slice(1)
+    },
+  }
+
+  return useMethods(initState, methods)
+}
+
+export default useArray
+
+```
