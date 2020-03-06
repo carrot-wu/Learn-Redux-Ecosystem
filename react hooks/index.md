@@ -47,6 +47,17 @@ function mountWorkInProgressHook(): Hook {
 }
 ```
 会根据hooks的执行顺序通过链表的方式把一个个连接起来（通过.next链接）。
+```ts
+//hook对象
+{
+    memoizedState: null,
+    baseState: null,
+    queue: null,
+    baseUpdate: null,
+    next: null,
+  }
+```
+对于第一个hooks会直接把当前hooks对象赋值给fiberNode的memoizedState对象上，之后的hooks会通过链表.next的形式串联起来。这样子就形成了hooks链表，因为在每一次循环就能通过.next来获取具体的hooks(简单说就是react并不知道调用的是哪个hooks只知道hooks的对应顺序而已)。之所以使用链表的原因就是因为，hooks的更新会进行频繁的插入操作，而且需要通过表头来方便的获取最新值，链表的性能更高（因为后续的每次更新操作actions都会在当前hooks对象中插入到queue中，queue会用来循环调用获取最新的state值）
 
 ### 调用set函数
 在调用set函数的过程中，每一个hooks内部也维护着一个更新链表queque，当前的更新链表保存着每一次更新的update对象。每一次调用set函数的时候把会update对象最新值放在链表的最末尾。链表内的值时一组循环引用的链表值具体可以看图片
