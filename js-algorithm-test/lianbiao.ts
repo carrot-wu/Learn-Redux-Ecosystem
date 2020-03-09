@@ -204,3 +204,26 @@ function getTwoSum(array: number[], sum:number): number[] {
   }
   return []
 }
+
+/**
+ * 检查牌是否顺子
+ * @param {number[]} array
+ * @returns {boolean}
+ */
+function isContinuePocker(array: number[]):boolean {
+  const sortArray = array.sort((a,b) => a-b)
+  let jokerNum = 0
+  let spaceNum = 0
+  for (let i =0; i<sortArray.length -1; i++){
+    if(array[i] === 0){
+      jokerNum +=1
+    }else{
+      if(array[i] !==0){
+        const space = array[i+1] - array[i]
+        if(space === 0) return false
+        spaceNum += space -1
+      }
+    }
+  }
+  return jokerNum >= spaceNum
+}
