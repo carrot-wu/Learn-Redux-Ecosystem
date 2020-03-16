@@ -459,13 +459,14 @@ function getRemainPeopleIndex(total: number, space: number) {
   // 最后第totalLunshu轮时胜利人的索引是0
   let lastPeopleIndex = 0
   // 1. 第一轮的时候第一个被删除索引是(m-1)%n。所以第二轮的开始（0）位置索引就是m%n,所以推导出第二轮第k个位置在第1轮的索引就是(m+k)%n。
-  // 2. 假设在第n轮时候的某个人位置是f(n)，那么第n-1轮的时候位置其实就是f(n-1) = (m+f(n))%n。即第7轮某个人位置是2 那么第6轮他的位置就是(m+ 2)%n, 那么第五轮他的位置就是(m + ((m+ 2)%n))%n。
+  // 2. 假设在第n轮时候的某个人位置是f(n)，那么第n-1轮的时候位置其实就是f(n-1) = (m+f(n))%(total - n)。即第7轮某个人位置是2 那么第6轮他的位置就是(m+ 2)%(total - 6), 那么第五轮他的位置就是(m + ((m+ 2)%n))%n。
   // 3. 现在我们知道8个人时，最后一轮就是第七轮因为每一轮走一个人此时剩下的人索引就是0，所以上一轮他的位置就是(m+2)%8,因此我们可以一直循环上去直到第一轮就是他获取的位置。
 
   // 一直循环到00位置 走totalLunshu轮
   while(totalLunshu > 0){
-    //上一轮的索引 f(n-1) = f(n-1) = (m+f(n))%n
-    lastPeopleIndex = (space+ lastPeopleIndex) % total
+    //上一轮的索引 f(n-1) = f(n-1) = (m+f(n))%（每一轮的人数）
+    lastPeopleIndex = (space+ lastPeopleIndex) % (total - totalLunshu + 1)
+    totalLunshu -=1
   }
   return lastPeopleIndex
 }

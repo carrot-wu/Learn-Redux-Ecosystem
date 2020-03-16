@@ -468,6 +468,7 @@ function printList(list: List) {
 
 ```
 解答:   
+
 ```ts
 function reverseList(head: List): List {
   let headNode = head
@@ -491,6 +492,7 @@ function reverseList(head: List): List {
 >如果先循环出链表的所有长度在进行求值的话，需要循环两次复杂度为2n。可以使用双指针进行优化
 1. 初始指针a,第二个指针b与指针a间隔为k
 2. 这时候两个指针都进行循环，如果b指针到达终点了，那么a指针当前位置就是倒数第k个节点位置
+
 ```ts
  * 获取倒数第n个节点的链表
  * @param {List} list
@@ -572,6 +574,7 @@ function getListStart(list: List): List | null {
 1. 通过循环获取链表的长度。
 2. 获取长的链表先走长度的差异值步
 3. 同时循环查找是否有相等的节点，有的话就是公共节点
+
 ```ts
 function getFirstCommonNode(a: List, b: List): List | null {
   if (!a || !b) {
@@ -618,7 +621,7 @@ function getFirstCommonNode(a: List, b: List): List | null {
  1. 第一轮的时候第一个被删除索引是(m-1)%n。所以第二轮的开始（0）位置索引就是m%n,所以推导出第二轮第k个位置在第1轮的索引就是(m+k)%n。
  2. 假设在第n轮时候的某个人位置是f(n)，那么第n-1轮的时候位置其实就是f(n-1) = (m+f(n))%n。即第7轮某个人位置是2 那么第6轮他的位置就是(m+ 2)%n, 那么第五轮他的位置就是(m + ((m+ 2)%n))%n。
  3. 现在我们知道8个人时，最后一轮就是第七轮因为每一轮走一个人此时剩下的人索引就是0，所以上一轮他的位置就是(m+2)%8,因此我们可以一直循环上去直到第一轮就是他获取的位置。
- 
+
 ```ts
 //链表解决
 function getRemainPeopleIndexByList(total: number, space: number): number{
@@ -681,6 +684,36 @@ function getRemainPeopleIndex(total: number, space: number): number {
     totalLunshu -=1
   }
   return lastPeopleIndex
+}
+```
+
+### 合并两个排序的链表
+#### 输入两个单调递增的链表，输出两个链表合成后的链表，当然我们需要合成后的链表满足单调不减规则。
+>核心在于比较两个表头，把比较小的值塞进一个链表中，然后大的值继续与小的值的链表继续比较
+1. 假设有p1和p2两个链表, 比较p1和p2的值。
+2. 如果p1小于p2，那么把p1的值保存起来，然后p1的下一个值继续与p2进行比较
+3. 如果p1大于p2，那么把p2的值保存起来，然后p2的下一个值继续与p1进行比较
+```ts
+/**
+ * 合并两个单调递增的链表
+ * @param first
+ * @param second
+ */
+function sortTwoList(p1: List, p2: List): List {
+  if(!p1)return p2
+  if(!p2)return p1
+  let head;
+  if (p1.val < p2.val) {
+    head = p1;
+    head.next = sortTwoList(p1.next, p2)
+  } else if (p1.val > p2.val) {
+    head = p2;
+    head.next = sortTwoList(p1, p2.next)
+  }else {
+    head = p1
+    head.next = sortTwoList(p1.next, p2.next)
+  }
+  return head
 }
 ```
 
