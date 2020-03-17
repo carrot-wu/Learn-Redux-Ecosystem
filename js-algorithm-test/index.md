@@ -486,7 +486,70 @@ function reverseList(head: List): List {
   return headNode
 }
 ```
+### 反转链表中的n-m个节点
+#### 输入一个链表，反转链表后，输出新链表的表头。例如1-2-3-4-5,反转2-4个节点输出为1-4-3-2-5。
+>其实跟上面的反转整个链表操作很相似，我们可以拆分成三部分,1-n n-m m-末尾。这样子只需对n-m进行反转然后再拼接即可
+1. 先从头循环n获取第一部分的链表1-n（p1）
+2. 对于剩余部分的链表进行m次反转处理（p2）
+3. 拼接p1和p2(p1.next = p2)
+```ts
+function reverseList(head: List): List {
+  let headNode = head;
+  let currentNode = null;
+  while (head && head.next) {
+    // 获取第二个链表
+    currentNode = head.next;
+    //head的下一个链表指向下下一个即第三个
+    head.next = currentNode.next;
+    // 第二个链表指向头部链表
+    currentNode.next = headNode;
 
+    headNode = currentNode;
+  }
+  return headNode;
+}
+
+
+function reverseNumList(head: List, n:number, m: number): List {
+  //处理n =1 的情况
+  if(n === 1){
+    let headNode = head
+    let currentNode
+    for(let i = 0; i < m-n; i++) {
+      currentNode = head.next
+      head.next = currentNode.next
+      currentNode.next = headNode
+      headNode = currentNode
+    }
+    return headNode
+  }
+
+  let list = head
+
+  for( let i = 1; i< (n - 1); i++){
+    list = list.next
+  }
+  // 保存反转链表的前一个节点 用于.next = p2
+  const front = list
+  // 需要反转的链表 
+  
+  let spaceHead = list.next
+  let headNode = spaceHead
+  let currentNode
+  for(let i = 0; i < m-n; i++) {
+    currentNode = spaceHead.next
+    spaceHead.next = currentNode.next
+    currentNode.next = headNode
+    headNode = currentNode
+  }
+  front.next = headNode
+  return head
+}
+```
+
+### 两个一组反转链表
+#### 输入一个链表，每两个一组进行反转。如:1-2-3-4-5 => 2-1-4-3-5
+>其实反转链表的操作我们已经很熟悉了
 ### 链表倒数第k个节点
 #### 输入一个链表，输出该链表中倒数第k个结点。
 >如果先循环出链表的所有长度在进行求值的话，需要循环两次复杂度为2n。可以使用双指针进行优化
@@ -716,6 +779,8 @@ function sortTwoList(p1: List, p2: List): List {
   return head
 }
 ```
+
+## 二叉树
 
 ## 堆和栈
 堆和栈的数据结构一般都是成双成对，这里就一并讲了吧。
