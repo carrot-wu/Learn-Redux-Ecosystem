@@ -10,6 +10,7 @@
 从源码可以看出，react把所有的hooks分成了两个阶段的hooks
 1. mount阶段对应第一次渲染初始化时候调用的hooks方法,分别对应了`mountState`,`mountEffect`,`mountReducer`, `mountLayoutEffect`以及其他hooks。
 2. update阶段对应setXXX函数触发更新重新渲染的更新阶段,分别对应了`updateEffect`,`updateReducer`,`updateState`, `updateLayoutEffect`以及其他hooks
+
 ```ts
 // react-reconciler/src/ReactFiberHooks.js
 // Mount 阶段Hooks的定义
@@ -68,7 +69,8 @@ function mountWorkInProgressHook(): Hook {
   return workInProgressHook;
 }
 ```
--------------------1----------------------
+
+![alt](http://img.carrotwu.com/Fi-_5Hb4C4lSLJIwvZxrOYq-Rhi6)
 
 ### hook内创建一个queue链表
 1. 同时呢会在当前hooks里通过initialState保存当前值在`memoizedState`。并且会创建一个`queue`链表，这是一个单向循环链表（环）。因为mount阶段时是第一次渲染，没有action对象所以返回出去的是初始值，以及一个`dispatchAction`方法这个后面说。这个queue链表跟上面的hooks链表有点像，不过有两个不同点。
@@ -95,7 +97,8 @@ function mountState(initialState) {
   return [hook.memoizedState, dispatch];
 }
 ```
-----------------2-----------------------
+![alt](http://img.carrotwu.com/FsN5wDfcZOdCWF3SpA0UR4aKb1lh) 
+
  简单说就是mount的时候通过`workInProgressHook`来保存当前的hooks，然后通过.next来保存hooks，形成一个hooks的单向链表。同时呢，在每一个hooks的内部会维护一个queue的单向循环链表。并且hooks的单向链表保存在相对应的fiberNode的`memoizedState`，这样子在update阶段的时候我们就可以直接通过fiberNode的`memoizedState`属性获取hook链表了
 
 
@@ -139,7 +142,7 @@ function dispatchAction(fiber, queue, action) {
 }
 
 ```
-----------------------2-------------------------
+![alt](http://img.carrotwu.com/FsN5wDfcZOdCWF3SpA0UR4aKb1lh) 
 
 ### update阶段（state改变、父组件re-render等都会引起组件状态更新）useState()更新状态：
 1. 在updateState的过程中会判断传入的action，如果是函数那么执行返回（setState也可以是一个函数）。
@@ -229,7 +232,7 @@ function updateReducer(reducer,initialArg,init) {
   return [hook.memoizedState, dispatch];
 }
 ```
------------------3----------------------------------------
+![alt](http://img.carrotwu.com/Fhf7rFFSkP7mvIRAsbUednwbgC7x)
 
 ## useEffect
 > useEffect其实前面跟useState类似，都是创建hooks，拼接hooks链表，不同的是effect的回调而已
@@ -339,11 +342,11 @@ function createFunctionComponentUpdateQueue(): FunctionComponentUpdateQueue {
 
 ```
 
----------------4--------------------------
-
+![alt](http://img.carrotwu.com/FlnfsZPKsVRCQ5yJlV_kXIrCKmK-)
 
 ### updateEffect
 > updateEffect最重要的就是会给那些deps没有发生改变的effect搭上hookEffectTag标记，后续的循环执行回调时会跳过执行。
+
 1. 通过`areHookInputsEqual`函数判断deps是否有改变，没改变的话打上`hookEffectTag`的tag，后续的循环不会执行回调
 2. 如果deps改变那么就会打上`HookHasEffect`的tag ，并且更新当前hooks的`memoizedState`属性为effect新的链表
 
@@ -401,7 +404,7 @@ function areHookInputsEqual(
 }
 ```
 
--------------5-----------------------------------
+![alt](http://img.carrotwu.com/FibJc6mz5z8QIanntbMXWH3qmNRy)
 
 给fiberNode.updateQueue添加完相对应的effect之后，最后我们就需要循环执行相应的effect副作用函数。
 1. 在`commitHookEffectListUnmount`和`commitHookEffectListMount`中遍历执行相应的`destory`或者`create`副作用方法。
@@ -458,6 +461,7 @@ function commitHookEffectListMount(tag: number, finishedWork: Fiber) {
 
 ### commitWork中调用的commitHookEffectListUnmount方法
 >这段代码的出处https://github.com/facebook/react/blob/master/packages/react-reconciler/src/ReactFiberCommitWork.js#L1564
+
 1. 最终我们在commitWork中发现了传入的tag值 `commitHookEffectListUnmount(HookLayout | HookHasEffect, finishedWork)`
 2. 以及` commitHookEffectListUnmount(HookLayout | HookHasEffect, finishedWork)`这两个调用函数接收`HookHasEffect`以及`HookLayout`，对应我们上面deps发生改变时候的tag
 3. `HookLayout`值的是useLayoutEffect，`HookHasEffect`指的是useEffect的tag，这就解释了我们上面deps没改变传入的HookTagEffect并不会进行执行。
@@ -525,8 +529,11 @@ function commitWork(current: Fiber | null, finishedWork: Fiber): void {
 useLayoutEffect其实跟useEffect流程一样，不同的地方在于打上的tag标记。useLayoutEffect的是HookLayout，useEffect的tag标记是HookHasEffect。
 
 ## 完整流程图
------------6------------------------
+
+![alt](http://img.carrotwu.com/FspIG1c8XiPWHChOe-jwOwsfDsla)
+
 ## 参考
 >当前我看的源码是3/15最新的16.13.0的源码，参考文献的文章源码比较旧了，所以一些参考文章的代码跟我的不一样，比如firstWorkInProgressHook这个属性在最新版是没有了的直接废弃掉了。以及deps改变所打上的tag也是进行了修改，获取update阶段的链表逻辑也发生了改变。最新代码的话请以我这边文章为主。
 
 [React Hooks源码解析，原来这么简单～](https://juejin.im/post/5e5e66d6e51d4526e651c796)
+

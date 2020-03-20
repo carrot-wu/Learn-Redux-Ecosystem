@@ -116,6 +116,68 @@ function formatOrderArray(array: number[]): number[] {
 }
 ```
 
+###  无重复字符的最长子串
+#### 给定一个字符串，请你找出其中不含有重复字符的 最长子串 的长度。 abcabcbb的无重复字符的最长子串是 "abc"，所以返回3
+>滑动窗口的一道题
+1. 创建一个数组来作为滑动窗口，声明一个最大值的变量，从0开始循环
+2. 如果当前元素在数组内存在了，那么把当前元素与之前的头删除，最后在插入当前值在末尾
+3. 比较max与当前数组的长度获取较大值
+
+```ts
+/**
+ * @param {string} s
+ * @return {number}
+ */
+var lengthOfLongestSubstring = function(s) {
+   if(!s) return 0
+    let max = 0
+    let slide = []
+    for(let i =0;i < s.length; i++){
+      const val = s[i]
+      // 判断是否已在slide里了
+      const index = slide.indexOf(val)
+      if(index > -1){
+        // 把头去掉继续循环
+        slide.splice(0, index+1)
+      }
+      // 插入当前值
+      slide.push(val)
+      max = Math.max(max, slide.length)
+
+    }
+    return max
+};
+```
+
+### 承最多水的容器
+#### 给你 n 个非负整数 a1，a2，...，an，每个数代表坐标中的一个点 (i, ai) 。在坐标内画 n 条垂直线，垂直线 i 的两个端点分别为 (i, ai) 和 (i, 0)。找出其中的两条线，使得它们与 x 轴共同构成的容器可以容纳最多的水。
+-------------a1-------------
+>解决的本质是通过双指针进行向中间求值判断的过程，核心在于双指针是否要移动
+1. 因为矩形的面积= 最短的边 * (两条边的间距)
+2. 要矩阵面积最大化，两条垂直线的距离越远越好，两条垂直线的最短长度也要越长越好。
+3. 创建两个指针在首尾，这时候为了查找是否还有容积大的，所以短的边要移动一格，比较大小
+3. 123继续循环
+
+```ts
+// 获取最大水的容积
+var maxArea = function(height: number[]):number {
+	let start = 0
+	let end = height.length -1
+	let max = Math.min(height[start], height[end]) *(end -start)
+
+	while(start < end) {
+		// 判断哪个最小
+		if(height[start] > height[end]){
+			end -=1
+		}else {
+			start +=1
+		}
+		max = Math.max(Math.min(height[start], height[end]) *(end -start), max)
+	}
+	return max
+};
+
+```
 ### 和为 S 的连续正整数序列
 
 #### 输入一个正数 S，打印出所有和为 S 的连续正数序列。例如：输入 15，有序 1+2+3+4+5 = 4+5+6 = 7+8 = 15 所以打印出 3 个连续序列 1-5，5-6 和 7-8。
@@ -353,6 +415,9 @@ function isContinuePocker(array: number[]): boolean {
 }
 ```
 
+### 在排序数组中查找元素的第一个和最后一个位置
+#### 给定一个按照升序排列的整数数组 nums，和一个目标值 target。找出给定目标值在数组中的开始位置和结束位置。
+>对于一些排序了的数组问题，都可以通过二分查找来优化问题，二分查找的本质就是，把数组分成两部分，根据值的大小取某一部分继续二分，直到数组长度小于2
 ### 三数之和
 
 ### 给定一个包含 n 个整数的数组 nums，判断 nums 中是否存在三个元素 a，b，c ，使得 a + b + c = 0 ？找出所有满足条件且不重复的三元组。
@@ -370,31 +435,41 @@ function isContinuePocker(array: number[]): boolean {
  * @returns {number[][]}
  */
 function threeNumberSum(array: number[]): number[][] {
-  const cacheArray: number[][] = [];
-  const sortArray = array.sort((a, b) => a - b);
-  for (let i = 0; i < sortArray.length; i++) {
-    let start = i + 1;
-    let end = sortArray.length - 1;
-    if (i > 0 && sortArray[i] !== sortArray[i - 1]) {
-      //只有在i大于0 并且不等于上一个数才进行求值
-      while (start < end) {
-        //大于
-        if (sortArray[start] + sortArray[end] > -sortArray[i]) {
-          // 右边左移
-          end -= 1;
-        } else if (sortArray[start] + sortArray[end] < -sortArray[i]) {
-          //小于 左边右移
-          start += 1;
-        } else {
-          // 相等 插入 然后都移动继续循环
-          cacheArray.push([sortArray[i], sortArray[start], sortArray[end]]);
-          end -= 1;
-          start += 1;
+  const sortArray = nums.sort((a,b) => a-b)
+  const result: number[][] = []
+  let start
+  let end
+  for(let i =0; i< sortArray.length; i++){
+    if(sortArray[i] !== sortArray[i-1] || i === 0){
+      start = i + 1
+      end = sortArray.length - 1
+      while(start < end){
+        if(sortArray[start] + sortArray[end] > -sortArray[i]){
+          // 大于  右边的指针左移
+          end -=1
+        }else if(sortArray[start] + sortArray[end] < -sortArray[i]){
+          // 小于  左指针右移
+          start +=1
+        }else {
+          // 相等
+          result.push([sortArray[i], sortArray[start], sortArray[end]])
+          //指针都移动 继续查询
+          start +=1
+          end -=1
+
+          // 为了防止 如果下一个指针等于当前上一个指针也跳过
+          while(sortArray[start] === sortArray[start-1]){
+            start +=1
+          }
+          while(sortArray[end] === sortArray[end+1]){
+            end -=1
+          }
+          
         }
       }
     }
   }
-  return cacheArray;
+  return result
 }
 ```
 

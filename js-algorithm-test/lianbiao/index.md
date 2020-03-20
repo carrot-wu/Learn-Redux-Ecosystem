@@ -287,10 +287,39 @@ function getRemainPeopleIndex(total: number, space: number): number {
 }
 ```
 
-### 堆和栈
-堆和栈的数据结构一般都是成双成对，这里就一并讲了吧。
-1. 堆的结构类似于图书馆的藏书架子一样，书本整齐的放在书架上，你只需要知道相对应的书架行号和列号，那么就可以直接拿到这本书，类似于对象的数据格式一样 。js中的引用变量都以堆的形式放在内存中。
-2. 首先js中JavaScript的执行上下文沿用了栈结构，即我们经常说的执行上下文栈，栈是一个什么样的数据结构呢。简单说就是：先进后出，后进后出。就像高中时化学实验的量筒，假设往量筒中放入乒乓球的模型一样。一号球是最开始放进去的，五号球球是最后放入的。但是如果要把所有球拿出来，那么就是5号球先拿出来，一号球最后，栈就是这种结构。
-![alt](http://img.carrotwu.com/FoRQVHw7BWPhuzHC4o9i9GFN8m8X)
+### 合并两个排序的链表
+
+#### 输入两个单调递增的链表，输出两个链表合成后的链表，当然我们需要合成后的链表满足单调不减规则。
+
+> 核心在于比较两个表头，把比较小的值塞进一个链表中，然后大的值继续与小的值的链表继续比较
+
+1. 假设有 p1 和 p2 两个链表, 比较 p1 和 p2 的值。
+2. 如果 p1 小于 p2，那么把 p1 的值保存起来，然后 p1 的下一个值继续与 p2 进行比较
+3. 如果 p1 大于 p2，那么把 p2 的值保存起来，然后 p2 的下一个值继续与 p1 进行比较
+
+```ts
+/**
+ * 合并两个单调递增的链表
+ * @param first
+ * @param second
+ */
+function sortTwoList(p1: List, p2: List): List {
+  if (!p1) return p2;
+  if (!p2) return p1;
+  let head;
+  if (p1.val < p2.val) {
+    head = p1;
+    head.next = sortTwoList(p1.next, p2);
+  } else if (p1.val > p2.val) {
+    head = p2;
+    head.next = sortTwoList(p1, p2.next);
+  } else {
+    head = p1;
+    head.next = sortTwoList(p1.next, p2.next);
+  }
+  return head;
+}
+```
+
 
 

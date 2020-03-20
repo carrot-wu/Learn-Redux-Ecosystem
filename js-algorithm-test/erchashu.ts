@@ -313,6 +313,7 @@ function findPath(root: TreeNode, sum:number):number[][] {
 
 function isValidBST(root: TreeNode): boolean {
 	if(!root) return false
+	// 不用数组存 而是通过保存上一次的值会更快一点点
 	const result = []
 	const stack = []
 	let current = root
