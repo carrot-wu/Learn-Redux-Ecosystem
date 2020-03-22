@@ -123,6 +123,12 @@ function getProductMaxValue (weight, values, maxWeight) {
 }
 */
 
+/**
+ *
+ * @param weight 物品重量数组
+ * @param values 物品价值数组
+ * @param maxWeight 背包最大重量
+ */
 function getProductMaxValue(weight: number[],values: number[],maxWeight: number):Array<Array<number>> {
   const defaultArray:Array<Array<number>> = Array.from({length: weight.length}).fill(1).map(() => ([]))
   //获取第一件物品在 0 - maxWeight的价值
@@ -238,10 +244,10 @@ const uniquePathsWithObstacles = function(obstacleGrid: number[][]):number {
         // 处理边界值
         if(i ===1){
           // i=1时 第一行 如果上一列为0被阻挡了那么是无法下来的 得返回0不然就返回1
-          cacheArray[mIndex][nIndex] = cacheArray[0][nIndex-1] === 1 ? 1: 0
+          cacheArray[mIndex][nIndex] = cacheArray[0][nIndex-1] === 0 ? 0: 1
         }else if(k ===1){
           // 同理
-          cacheArray[mIndex][nIndex] = cacheArray[mIndex-1][0] === 1 ? 1: 0
+          cacheArray[mIndex][nIndex] = cacheArray[mIndex-1][0] === 0 ? 0: 1
         }else {
           // 都不是的话 f(m,n) = f(m-1,n) + f(m, n-1)
           cacheArray[mIndex][nIndex] = cacheArray[mIndex -1][nIndex] + cacheArray[mIndex][nIndex - 1]
@@ -249,6 +255,5 @@ const uniquePathsWithObstacles = function(obstacleGrid: number[][]):number {
       }
     }
   }
-   console.log(cacheArray)
-   return cacheArray[m-1][n-1]
+  return cacheArray[m-1][n-1]
 }
