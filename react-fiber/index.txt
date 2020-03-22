@@ -107,7 +107,7 @@ Stack 在执行时是以一个 tree 为单位处理；Fiber 则是以一个 fibe
  当兄弟节点也执行完work之后会通过return属性值回到父节点然后执行父节点的sibling 就这样一直下去
  react通过这种算法来模拟调用栈的形式 但是可以随时进行打断 因为只有一个调用栈 每次执行的都是current（子节点或者兄弟节点会复制给current）
  执行操作完成
-unction walk(o) {
+function walk(o) {
     let root = o;
     let current = o;
 
@@ -153,10 +153,8 @@ workInProgress
 解决办法是: 所有更新任务按照顺序插入一个队列, 状态必须按照插入顺序进行计算，但任务可以按优先级顺序执行。
 简单说就是队列可以按插入顺序进行计算，但是在最终通过插入任务执行的时候通过优先级
 https://juejin.im/post/5d12c907f265da1b6d4033c5
-https://juejin.im/post/5be969656fb9a049ad76931f
-https://juejin.im/post/5dadc6045188255a270a0f85#heading-1
+https://juejin.im/post/5e1e9f33f265da3e2c247176#heading-0
 
---hooks https://juejin.im/post/5e5e66d6e51d4526e651c796#comment
 --- 接下来整理一下fiber的渲染流程
 在第一次渲染时会把react.crateElement转化成一个个fiber节点，这一个个fiber节点最终生成一个完整的fiberTree。初次渲染的时候会根据前面生成的fiberTree生成workinProghressTree进行后续的渲染以及更新操作。
 在后续更新或者setState的过程中，会生成新的一个fiberTree。这时候会通过
