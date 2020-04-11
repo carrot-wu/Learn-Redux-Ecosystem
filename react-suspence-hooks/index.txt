@@ -1,8 +1,0 @@
-suspense的理解需要劣理解 commit parse 和 render parse
-在16.4之后 生命周期变成了 constructor getDeriverStateFromProps - render - (组件更新dom)-componentDidMount
-setState getDeriverStateFromProps - shouldComponentUpdate - render - getSnaphStateBeforeUpdate -(组件更新dom) - componentDidUpdate
-propsChnage  getDeriverStateFromProps - shouldComponentUpdate - render - getSnaphStateBeforeUpdate -(组件更新dom) - componentDidUpdate
-
-其中 render函数 以及render函数之前的变成了 render parse 之后的变成了commit parse
-其中commit 的优先级比 render高 不会被打断 所以在fiber除了之后 因为会被重复执行 所以 render的生命周期可能会被执行多次
-其中多出了一个 getSnaphStateFromError 这个函数会在render函数发生的错误的时候进行捕获 然后supsense会先调用callback 然后等待异步回调拿到数据了 这时候supsense会触发重新渲染 自然而然 这时候supsencee的异步回调就拿到了数据 自然就渲染成功了

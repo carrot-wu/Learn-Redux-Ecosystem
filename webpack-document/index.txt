@@ -19,12 +19,25 @@ Webpack 的配置文件中所有依赖的插件通过 new XXXPlugin() 的方式�
 在 Webpack 初始化配置阶段将遍历 plugin 配置项并将每个 Plugin 都注册
 接下来在Webpack 主流程运行时，每个关键生命周期点通过 call 方式触发特定事件，注册了特定事件的 Plugin 回调被调用，回调方法中被注入编译对象，可以获取到特定事件触发时编译对象的状态（即当前编译信息）并完成一些操作达到扩展目的。
 
+-------plugin---------------
+插件是一个函数，函数原型上有个apply方法，接受webpack注入的complire作为参数,complire是webpack的编译器对象，在webpack初次启动的过程中初始化，里面包括了所有初始化的插件实例以及loader等以及一些相关的配置。通过complire对象我们可以通过complire.plugin注册一些webpack的编译过程中向外派发的一些生命周期方法，例如emit写入文件到dist complire开发执行编译 afetrComplire完成编译等等。注册函数内部有两个参数一个是compliation，Compilation继承自Complire指的是webpack单次编译到结束的过程。 Compilation中包含当前编译的模块资源模块文件集合等等，可以通过修改这些对象影响webpack的编译。complire与compilation的区别是:compilare指代的是webpack的执行到结束的完整生命周期,compilation指代的是单次资源变动导致重新编译的过程
+
 loader的原理
 loader在扫描文件的时候会根据文件后缀执行不同的loader 会直接把文件字符串传入进行处理
 根据解析的 Loader 文件路径，加载 Loader 模块，兼容 commonJS、ESModule 或 SystemJS 方式
 按 Loader 链数组控制 Loader 的调用过程，具体调用顺序在 Pitching Loader 小节中进一步说明，简单来说包括三个部分：pitch阶段 => 处理资源内容阶段 => Loader 函数调用阶段（同步或异步）
 持续更新 Loader Context 信息
 获取执行后的结果并返回 Webpack 编译流程
+----------------loader-------------其实就是一个函数。webpack原本只能对js文件进行处理,loader通过正则表达式匹配weback编译时的文件后缀把文件交给相对应的loader进行处理。
+webpack提供了一些第三方库用于loader的处理例如loader-utils用于获取options参数
+异步的loader通过this.async()执行的回调 在完成时通过callback()传入source即可
+
+tree-shinking
+在webpack4已经内置 通过mode:production即可配置
+注意的是 tree-shaking只支持es6的import export语法 原因是因为commonjs和es6的却别
+1 commonjs是动态导入即可以再条件语句下进行导入只能在执行时才能确定是否导入模块,es6是静态的，编译时即可确定模块的依赖。webpack的编译操作通过es6的惊天编译来确定哪些模块能够去除
+2 commonjs导出的变量其实是浅拷贝，怎么说呢就是对象的修改并不会影响导入的。而es6则会
 
 https://juejin.im/post/5df884ad6fb9a0164e7f979d#heading-0
-https://mp.weixin.qq.com/s/fGhcSP-SXz3l0Jklrv1I2w
+https://mp.weixin.qq.com/s/fGhcSP-SXz3l0Jklrv1I2
+https://juejin.im/post/5e6f4b4e6fb9a07cd443d4a5#heading-17
