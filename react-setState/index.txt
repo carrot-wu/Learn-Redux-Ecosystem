@@ -33,3 +33,24 @@ setState是异步 setState完并不能实时获取到更新的state的数据 如
 
 在一般声明周期的setState中 在调用setState之前已经调用了 isBuntachUdating的方法了 这时候的isBunath 为true 所以这时候state状态以及component实例并没有直接进行渲染 而是放进了dirtyComponent中
 与之相反的是在异步时间中的setState以及原生事件的addEventListner中 就是同步的 因为这时候不会执行idbatchupdating 所以isbaunch这时候为false 直接进行了渲染更新
+
+https://mp.weixin.qq.com/s/vDJ_Txm4wi-cMVlX5xypLg
+
+--- 名词----
+1. partialState： setState传入的第一个参数，对象或函数
+2. _pendingStateQueue：当前组件等待执行更新的 state队列
+3. isBatchingUpdates：react用于标识当前是否处于批量更新状态，所有组件公用
+4. dirtyComponent：当前所有处于待更新状态的组件队列
+5. transcation：react的事务机制，在被事务调用的方法外包装n个 waper对象，并一次执行： waper.init、被调用方法、 waper.close
+6. FLUSH_BATCHED_UPDATES：用于执行更新的 waper，只有一个 close方法
+
+
+1. 首先执行setState 会把setState的参数pendingStateQueue的队列中
+2. 这时候判断是否isBactchingState是否处于true状态，及判断是否处于批量跟新状态，是的话那么会把当前组件实例丢进dirtyComponent队列中
+3. 不是的话会调用transcation事务机制的wrap方法，遍历执行更新组件队列进行更新
+4. 触发componentwillReceiveProps
+5. 执行生命周期 componentShouldUpdate，根据返回值判断是否要继续更新
+6. 将组件的state暂存队列中的 state进行合并，获得最终要更新的state对象，并将队列置为空。
+8.执行生命周期 componentWillUpdate。
+9.执行真正的更新， render。
+10.执行生命周期 componentDidUpdate。
