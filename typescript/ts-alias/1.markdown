@@ -1,17 +1,20 @@
-
 ## 问题由来
-我正在开发的cli工具wcli是有`node`+`typescript`编写的，在编写的过程中不免需要引用到大量的模块。
-大量的`import utils from '../../../../../utils'`太麻烦也太恶心了，于是开始了ts的路径别名踩坑之旅。
 
-## ts的路径别名设置
-ts的路径别名设置在社区中已经十分成熟了，官网中也有相应的文档描述。接下来的内容将直接饮用官网的描述以及设置。
+我正在开发的 cli 工具 wcli 是用`node`+`typescript`编写的，在编写的过程中不免需要引用到大量的模块。
 
-### ts官网的路径映射配置
+大量的`import utils from '../../../../../utils'`太麻烦也太恶心了，于是开始了 ts 的路径别名踩坑之旅。
+
+## ts 的路径别名设置
+
+ts 的路径别名设置在社区中已经十分成熟了，官网中也有相应的文档描述。接下来的内容将直接引用官网的描述以及设置。
+
+### ts 官网的路径映射配置
+
 有时模块不是直接放在`baseUrl`下面。 比如，充分 `"jquery"`模块地导入，在运行时可能被解释为`"node_modules/jquery/dist/jquery.slim.min.js"`。 加载器使用映射配置来将模块名映射到运行时的文件，查看 `RequireJs documentation和SystemJS documentation`。
 
-`TypeScript`编译器通过使用tsconfig.json文件里的"paths"来支持这样的声明映射。 下面是一个如何指定 `jquery`的`"paths"`的例子。
+`TypeScript`编译器通过使用 tsconfig.json 文件里的"paths"来支持这样的声明映射。 下面是一个如何指定 `jquery`的`"paths"`的例子。
 
-```json
+```js
 {
   "compilerOptions": {
     "baseUrl": ".", // This must be specified if "paths" is.
@@ -22,13 +25,14 @@ ts的路径别名设置在社区中已经十分成熟了，官网中也有相应
 }
 ```
 
-请注意`"paths"`是相对于`"baseUrl"`进行解析。 如果 `"baseUrl"`被设置成了除"."外的其它值，比如tsconfig.json所在的目录，那么映射必须要做相应的改变。 如果你在上例中设置了 `"baseUrl": "./src"`，那么jquery应该映射到`"../node_modules/jquery/dist/jquery"`。
+请注意`"paths"`是相对于`"baseUrl"`进行解析。 如果 `"baseUrl"`被设置成了除"."外的其它值，比如 tsconfig.json 所在的目录，那么映射必须要做相应的改变。 如果你在上例中设置了 `"baseUrl": "./src"`，那么 jquery 应该映射到`"../node_modules/jquery/dist/jquery"`。
 
 ### 课代表总结
-1. **baseUrl: 用来设置下面path路径的根路径**。
-2. **path: 用来设置相对应的路径映射，数组中的路径相对应baseUrl的路径**。
 
-```json
+1. **baseUrl: 用来设置下面 path 路径的根路径**。
+2. **path: 用来设置相对应的路径映射，数组中的路径相对应 baseUrl 的路径**。
+
+```js
 "baseUrl": ".",
 "paths": {
   "@srcTypes/*": ["src/types/*"],
@@ -38,39 +42,39 @@ ts的路径别名设置在社区中已经十分成熟了，官网中也有相应
 }
 ```
 
-配置完即可在项目中使用
+配置完即可在项目中使用。
 
 ```ts
-import XXX from '@utils/getPluginFile'
-import { xx } from '@utils/checktype'
-import { xx } from '@utils/createContext'
+import XXX from "@utils/getPluginFile";
+import { xx } from "@utils/checktype";
+import { xx } from "@utils/createContext";
 ```
 
-## tsc的坑
-路径映射是做好了，但是在执行tsc打包完之后的代码发现报错了：用tsc编译的后，映射的路径不会处理，将导致编译后的代码找不到模块。
+## tsc 的坑
 
-比如上面的 import XXX from '@utils/getPluginFile' ，如果你使用 commonjs 模式编译后应该是 const XXX =  require('@utils/getPluginFile') ，结果就是找不到这个模块。
+路径映射是做好了，但是在执行 tsc 打包完之后的代码发现报错了：用 tsc 编译的后，映射的路径不会处理，将导致编译后的代码找不到模块。
+
+比如上面的 `import XXX from '@utils/getPluginFile'` ，如果你使用 commonjs 模式编译后应该是 `const XXX = require('@utils/getPluginFile')` ，结果就是找不到这个模块。
 
 ### 解决办法
-根据是否使用webpack打包，请自行选择
 
-1. 如果项目是通过webpack进行打包的，那么可以把路径的替换交给webpack的alias处理即可。
+根据是否使用 webpack 打包，请自行选择
+
+1. 如果项目是通过 webpack 进行打包的，那么可以把路径的替换交给 webpack 的 alias 处理即可。
 
 ```js
 module.exports = {
   //...
   resolve: {
     alias: {
-      Utilities: path.resolve(__dirname, 'src/utilities/'),
-      Templates: path.resolve(__dirname, 'src/templates/'),
-      '@utils': path.resolve(__dirname, 'src/utils/')
+      @utils: path.resolve(__dirname, 'src/utils/')
     }
   }
 };
 ```
 
-2. 问题是我的wcli不是用webpack打包的，纯粹就是使用tsc编译成js在node上执行的那怎么办呢？后面发现社区上提供了一个库-`module-alias`。在配置完tsconfig的基础上只需要通过简单的两步即可实现。
-在`package.json`配置跟webpack alias的路径指向然后在入口文件调用引用方法即可。
+2. 问题是我的 wcli 不是用 webpack 打包的，纯粹就是使用 tsc 编译成 js 在 node 上执行的那怎么办呢？后面发现社区上提供了一个库-`module-alias`。在配置完 tsconfig 的基础上只需要通过简单的两步即可实现。
+   在`package.json`配置跟 webpack alias 的路径指向然后在入口文件调用引用方法即可。
 
 ```js
 // Aliases
@@ -84,18 +88,22 @@ module.exports = {
 // 在入口文件最顶端调用即可
 require('module-alias/register')
 ```
+
 一些另外的用法可以去官网查看即可，这里是[**跳转连接**](https://www.npmjs.com/package/module-alias "Html")。
 
-## eslint的坑
-根据上面的内容,tsc是好使了打包出来的代码也能正常运行。不过有一个新的坑出来了：esling并不能识别路径别名，虽然能够正确跳转以及引用。难受啊！马飞！。
-----------1----------------
+## eslint 的坑
 
-最简单最暴力的方式自然是直接去掉这个插件，或者关闭相关 `ESLint rules`，但 `eslint-plugin-import` 30+ rules 集合 JS 社区 ES6 多年最佳实践，关闭这个规则实乃下下策。最终在以为大佬的博客下找到了一个完美的eslint插件解决这个问题-`eslint-import-resolver-typescript`。
+根据上面的内容,tsc 是好使了打包出来的代码也能正常运行。不过有一个新的坑出来了：eslint 并不能识别路径别名，虽然能够正确跳转以及引用。难受啊！马飞！。
+
+![alt](http://img.carrotwu.com/FrKp2UCgWk79_TE4cZshMiD7K7Zk)
+
+最简单最暴力的方式自然是直接去掉这个插件，或者关闭相关 `ESLint rules`，但 `eslint-plugin-import` 30+ rules 集合 JS 社区 ES6 多年最佳实践，关闭这个规则实乃下下策。最终在一位大佬的博客下找到了一个完美的 eslint 插件解决这个问题-`eslint-import-resolver-typescript`。
 
 ### eslint-import-resolver-typescript
-[**eslint-import-resolver-typescript**](https://github.com/alexgorbatchev/eslint-import-resolver-typescript "Html")光从名字就可以看出和这个问题极为相关。从项目 README 可以发现，这个 lib 可以在 TypeScript 项目使 eslint-plugin-import 找到正确的 .ts 和 .tsx 文件，也能识别 tsconfig.json 的 path 配置（路径别名2），甚至 monorepo 这类一个 git 仓库多个项目的工程也支持。
 
-用法也很简单在eslint的`"import/resolver":`指向当前配置了path的tsconfig的路径即可，eslint就会自动识别就不会报错了。
+[**eslint-import-resolver-typescript**](https://github.com/alexgorbatchev/eslint-import-resolver-typescript "Html")光从名字就可以看出和这个问题极为相关。从项目 README 可以发现，这个 lib 可以在 TypeScript 项目使 eslint-plugin-import 找到正确的 .ts 和 .tsx 文件，也能识别 tsconfig.json 的 path 配置（路径别名 2），甚至 monorepo 这类一个 git 仓库多个项目的工程也支持。
+
+用法也很简单在 eslint 的`"import/resolver":`指向当前配置了 path 的 tsconfig 的路径即可，eslint 就会自动识别就不会报错了。
 
 ```js
 {
@@ -149,7 +157,8 @@ require('module-alias/register')
 ```
 
 ## 最后
-贴一下我的eslintrc配置，可以作为参考：
+
+贴一下我的 eslintrc 配置，可以作为参考：
 
 ```js
 module.exports = {
