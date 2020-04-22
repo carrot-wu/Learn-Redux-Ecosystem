@@ -38,6 +38,9 @@ tree-shinking
 1 commonjs是动态导入即可以再条件语句下进行导入只能在执行时才能确定是否导入模块,es6是静态的，编译时即可确定模块的依赖。webpack的编译操作通过es6的惊天编译来确定哪些模块能够去除
 2 commonjs导出的变量其实是浅拷贝，怎么说呢就是对象的修改并不会影响导入的。而es6则会
 
+1.在一些相应库的package.json中 sideEffect设置为false 或者指定那些文件又副作用不能被treeshaking。注意的是less或者sass的话不能直接sideEffects: false吧，好像会被tree shaking，导致mini-css-extract-plugin无法抽取出css文件。解决办法：sideEffects:['*.css']css文件认为有副作用必须保留
+2. 在babel-loader中告诉babel是用es6的Importexport而不是使用commondjs的 设置module:false
+3.
 https://juejin.im/post/5df884ad6fb9a0164e7f979d#heading-0
 https://mp.weixin.qq.com/s/fGhcSP-SXz3l0Jklrv1I2
 https://juejin.im/post/5e6f4b4e6fb9a07cd443d4a5#heading-17
