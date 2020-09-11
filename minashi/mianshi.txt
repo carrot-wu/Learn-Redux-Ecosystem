@@ -1,0 +1,149 @@
+== 输入url之后发生的过程
+1. 用户输入url，浏览器会进行判断是进行请求还是搜索内容，如果是搜索内容就会拼接上合理的协议http或者https把url请求丢给网络请求进程。
+2. 网络进程接收到url，判断是否有缓存,如果有的话判断是强缓存还是写上缓存。如果是强缓存直接使用本地缓存，返回200状态码链接结束。如果是协商缓存或者没有缓存就要向服务器请求。（协商缓存头`cache-control` 属性值`no-store`禁止缓存, `no-cache`允许缓存但必须走协商缓存）
+3. dns解析。判断是否有dns缓存，从浏览器缓存->本机host缓存->代理商缓存->根域名->顶级域名->二级域名开始直到找到服务器的ip地址。
+4. 获取到服务器ip地址，发起http请求，如果是https的话还会建立ssl/tsl链接。在经过三次握手，交换syn，seq等三次数据包之后建立起http连接。
+5. 客户端拼接请求头和请求体传输给客户端，其中是协商缓存的话客户端还会拼接`etag last-modified`等请求头。
+6. 服务端接受到数据进行相应，拼接相应的响应头和响应状态码给服务端（其中304写上缓存允许使用缓存， 301永久重定向等等）。
+7. 服务端根据需要可以选择返回`connection: close`经过四次挥手关闭http链接，或者使用`connection: keep-alive`保持长链接进行复用http。
+8. 客户端根据返回的`content-type`相关类型进行相应的操作。
+9. 接受到是html或者css文件会交给渲染进程进行渲染操作，开始下载相应的html或者css文件。
+10. 边下载边解析，其中把html转化为`DomTree`，把css转化为`styleSheet`。两者解析完成会合并成`RenderTree`,其中遇到js文件时会进行堵塞dom节点的渲染执行。
+11. 生成的`RenderTree`经过layout计算出每个节点的位置，不断进行回流重绘最终形成我们看到的页面。
+
+延伸 缓存策略 强缓存 协商缓存 （private public no-cache|no-store的区别 last-motidify的缺点(只能毫秒级 文件内容没修改无法检测) 强缓存中的from memory
+cache 和from dishcache什么不同
+
+==http
+1 状态码 301永久重 302 临时重 303表示用get 会把post重定向为get 307会不改变重定向(本质上都是因为重定向的方法) 401登录 403无权限
+可以延伸206状态码 范围请求 请求头必须设置 range和响应头content-rangge
+2 http的三次握手四次分手
+ 1. 客户端发送syn的报文给服务端，然后客户端处于SYN_SEND的状态
+ 2. 客户端接受到syn报文之后，也发送一个syn以及ack报文给客户端,这时候服务端处于SYN_REV的状态。此时处于半连接状态
+ 3. 客户端接受到syn的报文之后也会发送一个ack给服务端,这是后客户端处于establised状态。客户端接受了ack的报文也处于establised状态，建立起链接
+
+  1. 客户端发送FIN的报文给服务端，客户端处于FIN_WAIT状态
+ 2. 服务端接送到报文，返回ack的报文给客户端告诉客户端接受到消息了。服务端这时候处于CLOSE_WAIT状态
+ 3. 服务端发送FIN报文给客户端，告诉客户端他也要关闭连接了，这时候服务端处于LAST_ACK状态。
+ 4. 第四个客户端发送相应的ack报文给服务端告诉它我接手到了，然后客户端处于(TIME_WAIT)状态，一段时间后就断开链接。客户端接收到报文断开链接
+ (两次握手行不行 不行 确保双方接收良好)(挥手第四次等待时间 TIME_WAIT状态为什么 防止还有数据包没法送) （4次挥手可以三次吗 可以 第二次第三次可以合并接收并且断开）
+
+
+先问tcp的对头堵塞在问http的丢头堵塞(因为数据包的丢失导致会进行重传堵塞后续数据包的接收)，大的可以的话可以问滑动窗口(一种高效的数据包接收发送
+双方维护一个队列 一次性发送5个 接受一个前进一格)
+
+http的对头堵塞 管道化 请求可以并行发送但是相应相应必须按照顺序(前面的会相应会堵塞后面的接收)
+解决办法(域名分片 多域名 tcp并发多个请求 http2的二进制分针技术)
+
+https比http多了一层ssl/tls （非对称加密） 实际上就是非对称加密协商出对称秘钥的协议 中间人攻击(证书 必须进行相关的签发 证明人)
+ （在深入https数据一定安全？ 安装不明根证书可以进行劫持 以及）
+
+ ==http2的优点
+ 1. 头部压缩 对臃肿的header进行压缩处理
+2. 二进制格式
+3. 通过流的形式解决队头阻塞和多路复用
+4. 服务端可推送数据
+
+==WEB安全 讲一下常见的安全XSS（跨站脚本攻击）以及csrf(跨站请求伪造)
+
+xss一般常见于输入框或者获取链接上的参数(注入恶意代码)
+1. 服务器对输⼊脚本进⾏过滤或转码。
+2. 充分利⽤CSP。（同源策略 禁止不明外域代码以及未授权脚本执行）什么情况下会跨域(域名端口号协议不同)
+3. 使⽤HttpOnly属性（一般为了获取cookie）
+
+csrf利用登录状态来进行请求的伪造（一般常见于登录了淘宝 在访问当前页面访问淘宝的接口）
+1 二次检验比如带上cookie或者token 简单说就是类似于验证码（为什么 因为只能使用不能获取）
+2 谷歌新出的samesite属性 1strict最严格 只能当前域名主站才能携带cookie 2Lax宽松 第三方站点打开或者get方法提交表单都会带上
+3 验证请求头的reference参数
+
+==任务队列 红任务 微任务
+
+==dom事件流程的了解 捕获 当前（按顺序）冒泡 addEventListner第三个参数false冒泡 true捕获
+
+==内存相关 js中的垃圾回收机制是怎么样运行的 （标记清楚与引用计数） 引用计数循环引用不行
+1 v8使用标记清楚 了解待机假说机制吗（不死的对象存货更久 新对象倾向于更早的死去）
+2 v8把内存分为了新生代和老生带 新生村新对象 老生带存老对象
+3 新生代使用cheeny算法(from to空间 from空间对象是否在用 是的话经历过依次新生代手机那么晋升 不然的话丢到to两级反转) 老生带使用标记清楚(标记未使用的内存进行清楚)
+
+==webpack相关 treeshaking (es6 以及commonjs区别 静态编译)
+
+1. webpack中的bundle chunk module有啥区别或者解释一下这三者
+(module模块 一个文件对应一个模块， 多个模块的合并叫做chunk 例如一个页面会集合多个模块, webpack最终打包出来的文件就是bundle)
+2. 了解loader吗loader是干嘛的
+（函数 翻译官 就是把传入的文本转化为对应的其它文本 webpack只能识别js其余文件格式交给loader）
+3. 同步的loader直接return即可，但是有个loader返回的内容是异步的话怎么办
+(const callback = this.async（）异步的callback调用即可)
+4. css-loader style-loader less-loader 应该按怎么样的顺序，为什么
+[style, css ,less]因为loader是从右到左下到上执行
+
+5.了解plugin吗 干什么的
+在webpack编译的生命周期中，会向外派发许多生命周期事件类似于vue。plugin可以通过注册的方式监听获取到当前编译的内容进行修改。
+6. 如何编写一个简单的plugin
+plugin就是一个函数 原型上有个apply方法进行注册钩子 参数是complire对象 通过complire.hook.xx.tap监听事件对象（可以获取webpack配置）
+第二 在监听事件函数有一个complation对象 可以监听具体当前编译的事件钩子
+7. complire还有compliation有什么区别
+注册函数内部有两个参数一个是compliation，Compilation继承自Complire指的是webpack单次编译到结束的过程。
+ Compilation中包含当前编译的模块资源模块文件集合等等，可以通过修改这些对象影响webpack的编译。
+complire与compilation的区别是:compilare指代的是webpack的执行到结束的完整生命周期,compilation指代的是单次资源变动导致重新编译的过程
+
+8 tree-shinking是干嘛的
+其实就是摇树，可以把编译过程中一些没有使用到的函数或者变量去掉
+
+9 webpack中如何使用tree-shaking
+webpack4 mode:production就自带。对于第三方库的话需要在packagejson里面配置sideEffect配置是否有副作用
+注意的是less或者sass的话不能直接sideEffects: false吧，好像会被tree shaking，导致mini-css-extract-plugin无法抽取出css文件。
+解决办法：sideEffects:['*.css']css文件认为有副作用必须保留 
+
+10 tree-shaking的原理是什么。或者这么说commonjs 和es6那个能够进行tree-shaking。为什么
+es6。 因为tree-shaking的依赖于es6的静态编译特性，就是说在编译的过程中就可以确定模块的依赖。
+而commonjs是基于运行时。即只有动态分析，只有在运行的时候才能确定是否使用了这个模块.（require可以用在条件语句中 import不可以且必须在顶层）
+
+
+==react相关 
+
+fiber相关 
+redux 相关 中间件实现洋葱模式 compose方法实现
+事件系统相关 时间池 异步时间如果获取值 e.presis
+
+hooks的使用 useState useRef等
+性能优化的hook  useCallback useMemo memo区别
+看过hooks的实现吗
+
+链接路由吗 知道vue-router或者react-router是如何实现的吗? 两个时间 onhashchange  onpopstate
+vue文档有一句为什么hash不需要在nginx进行配置 而history需要（hash不会携带#参数 history会带上完整链接 因此找不到） 如何配置
+ 提到nginx nginx的接口转发需要配置哪个参数(proxy-pass) 对于history路由 需要配置哪个参数返回对应的html文件 try——files
+
+对于hash路由只需要监听onhashchange就可以了（onpopstate初回浏览器前进返回触发 因此 重写pushState replaceState方法 a链接进行劫持默认事件重写） 
+
+==ts相关
+1了解ts吗 泛型  泛型约束
+2声明类型有几种方法 1接口 2类声明 3 type声明
+4 any never unknown区别 (never | a = a never & a = never)(unknow & a = a unknow | a = unknow)
+5了解高级类型吗为通用库写过类型吗类型工具 知道infer关键字吗 条件类型 映射类型
+
+出题 获取函数的返回类型 类型同居 type GetFn<T extends (...args: any[]) => any> = T extends (...args: any[]) => infer P  ? P : never
+interface B {
+    a: string;
+    b: number;
+    c: string[] | boolean;
+    d: boolean;
+}
+
+type Test<T, U> = ...
+
+// {a: string; b:number}
+type TestA = Test<B, boolean>
+
+一些额外的
+1. 在公司做过一些片架构的东西或者技术吗 比如cli脚手架 或者ci持续集成等等
+2. 了解docker吗 镜像容器的区别 docker命令 
+3. 解决最难的问题是什么
+4. 有啥想问的
+
+最后一到简单的题
+
+1. 公司的忠实用户有20000人
+2.假设开展发放优惠券活动总共发放40000张打车优惠券，当天参加有机会获取。当天一共有100000人参加活动（有忠实用户和羊毛党）。
+3. 规定：忠实用户参加了就一定获奖，剩下的名额在100000万剩余的人之中随机抽选。
+
+如何尽量提高性能的情况下
