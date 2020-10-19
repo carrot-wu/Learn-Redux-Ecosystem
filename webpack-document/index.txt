@@ -17,10 +17,14 @@ webpack的构建以及插件的处理都是基于tapabl来运行的，发布订�
 插件的执行流程
 Webpack 的配置文件中所有依赖的插件通过 new XXXPlugin() 的方式填写在 plugin 配置项下，这些 Plugin 中注册了特定事件并提供了回调。
 在 Webpack 初始化配置阶段将遍历 plugin 配置项并将每个 Plugin 都注册
-接下来在Webpack 主流程运行时，每个关键生命周期点通过 call 方式触发特定事件，注册了特定事件的 Plugin 回调被调用，回调方法中被注入编译对象，可以获取到特定事件触发时编译对象的状态（即当前编译信息）并完成一些操作达到扩展目的。
+接下来在Webpack 主流程运行时，每个关键生命周期点通过 call 方式触发特定事件，注册了特定事件的 Plugin 回调被调用
+，回调方法中被注入编译对象，可以获取到特定事件触发时编译对象的状态（即当前编译信息）并完成一些操作达到扩展目的。
 
 -------plugin---------------
-插件是一个函数，函数原型上有个apply方法，接受webpack注入的complire作为参数,complire是webpack的编译器对象，在webpack初次启动的过程中初始化，里面包括了所有初始化的插件实例以及loader等以及一些相关的配置。通过complire对象我们可以通过complire.plugin注册一些webpack的编译过程中向外派发的一些生命周期方法，例如emit写入文件到dist complire开发执行编译 afetrComplire完成编译等等。注册函数内部有两个参数一个是compliation，Compilation继承自Complire指的是webpack单次编译到结束的过程。 Compilation中包含当前编译的模块资源模块文件集合等等，可以通过修改这些对象影响webpack的编译。complire与compilation的区别是:compilare指代的是webpack的执行到结束的完整生命周期,compilation指代的是单次资源变动导致重新编译的过程
+插件是一个函数，函数原型上有个apply方法，接受webpack注入的complire作为参数,complire是webpack的编译器对象，在webpack初次启动的过程中初始化，里面包括了所有初始化的插件实例以及loader等以及一些相关的配置。
+通过complire对象我们可以通过complire.plugin注册一些webpack的编译过程中向外派发的一些生命周期方法，例如emit写入文件到dist complire开发执行编译 afetrComplire完成编译等等。
+注册函数内部有两个参数一个是compliation，Compilation继承自Complire指的是webpack单次编译到结束的过程。 Compilation中包含当前编译的模块资源模块文件集合等等，可以通过修改这些对象影响webpack的编译。
+complire与compilation的区别是:compilare指代的是webpack的执行到结束的完整生命周期,compilation指代的是单次资源变动导致重新编译的过程
 
 loader的原理
 loader在扫描文件的时候会根据文件后缀执行不同的loader 会直接把文件字符串传入进行处理

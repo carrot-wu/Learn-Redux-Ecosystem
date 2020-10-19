@@ -1,0 +1,123 @@
+version: "3.7"
+services:
+  database:
+    image: mysql:latest
+    container_name: database
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=wu823892
+      - MYSQL_USER=carrotwu   #创建test用户
+      - MYSQL_PASSWORD=wu823892  #设置test用户的密码
+      - TZ=Asia/Shanghai # 设置时区
+    command:
+      --character-set-server=utf8mb4
+      --collation-server=utf8mb4_general_ci
+      --explicit_defaults_for_timestamp=true
+      --lower_case_table_names=1
+      --max_allowed_packet=128M
+      --default-authentication-plugin=mysql_native_password
+    volumes:
+      - ./mysql:/var/lib/mysql
+    networks:
+      - harbor_harbor
+
+  #blogKoa:
+    #image: docker.carrotwu.com/blog/blog-koa
+    #image: registry.cn-shenzhen.aliyuncs.com/carrot-wu/blog-koa
+    #container_name: blogKoa
+    #depends_on:
+      #- database
+    #ports:
+    #  - "8082:8082"
+    #restart: on-failure
+    #environment:
+    #  - TZ=Asia/Shanghai
+    #command: yarn start
+    #networks:
+     # - harbor_harbor
+
+  blogBackend:
+    image: docker.carrotwu.com/blog/blog-backend
+    #image: registry.cn-shenzhen.aliyuncs.com/carrot-wu/blog-backend
+    container_name: blogBackend
+    depends_on:
+      - database
+    ports:
+      - "4000:4000"
+    restart: on-failure
+    environment:
+      - TZ=Asia/Shanghai
+    command: yarn start:prod
+    volumes:
+      - ./apiLog:/logs
+    networks:
+      - harbor_harbor
+
+  blogSsr:
+    image: docker.carrotwu.com/blog/blog-ssr
+    container_name: blogSsr
+    ports:
+      - "8088:8088"
+    restart: on-failure
+    environment:
+      - TZ=Asia/Shanghai
+    command: yarn server
+    networks:
+      - harbor_harbor
+  blog-web:
+    image: docker.carrotwu.com/blog/blog-web
+    container_name: blog-web
+    ports:
+      - "8888:8888"
+    restart: on-failure
+    environment:
+      - TZ=Asia/Shanghai
+    volumes:
+      - ./blogAcess:/var/log/nginx
+    networks:
+      - harbor_harbor
+  blog-admin:
+    image: docker.carrotwu.com/blog/blog-admin
+    #image: registry.cn-shenzhen.aliyuncs.com/carrot-wu/blog-admin
+
+    container_name: blog-admin
+    ports:
+      - "8777:8777"
+    restart: on-failure
+    environment:
+      - TZ=Asia/Shanghai
+    networks:
+      - harbor_harbor
+
+  drone-server:
+    image: drone/drone:latest
+    container_name: drone
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - /etc/docker/:/etc/docker
+      - ./drone:/var/lib/drone/ # 注意设置这一目录，用于放置sqlite文件，如果用mysql 或其他数据库，酌情处理
+    restart: always
+    ports:
+      - "3000:80"
+      - "3001:443"
+    networks:
+      - harbor_harbor
+    environment:
+      - DRONE_OPEN=TRUE    
+      - DRONE_ADMIN=carrotwu
+      - DRONE_USER_CREATE=username:carrot-wu,admin:true
+      - DRONE_DATABASE_DATASOURCE=/var/lib/drone/drone.sqlite # 指向该目录
+      - DRONE_DATABASE_DRIVER=sqlite3 # 数据库引擎
+      - DRONE_RPC_SECRET=${DRONE_RPC_SECRET}
+      - DRONE_RPC_PROTO=${DRONE_RPC_PROTO}
+      - DRONE_AGENTS_DISABLED=true 
+      - DRONE_USER_FILTER=carrot-wu,github
+      - DRONE_GITHUB_CLIENT_ID=${DRONE_GITHUB_CLIENT_ID}
+      - DRONE_GITHUB_CLIENT_SECRET=${DRONE_GITHUB_CLIENT_SECRET}
+      - DRONE_SERVER_HOST=${DRONE_SERVER_HOST}
+      - DRONE_SERVER_PROTO=${DRONE_SERVER_PROTO}
+networks:
+  harbor_harbor:
+    external: true

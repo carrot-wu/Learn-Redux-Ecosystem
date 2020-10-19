@@ -32,7 +32,8 @@ export function createProvider(storeKey = 'store') {
         getChildContext() {
           return { [storeKey]: this[storeKey], [subscriptionKey]: null }
         }
-
+        
+        // 设置从夫记传下来的store参数 用于进行子组件的传递
         constructor(props, context) {
           super(props, context)
           this[storeKey] = props.store;
@@ -49,7 +50,13 @@ export function createProvider(storeKey = 'store') {
       Provider.prototype.componentWillReceiveProps = function (nextProps) {
         if (this[storeKey] !== nextProps.store) {
           warnAboutReceivingStore()
+          // 设置非生产模式的prop数据即可
         }
+      }
+      const { name, children } = this.state
+      if(children){
+        // 子组件增加新的name参数
+        const cloneChildren = React.cloneChildren(children, {name})
       }
     }
 

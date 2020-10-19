@@ -340,6 +340,11 @@ export default function connectAdvanced(
             oldListeners = this.subscription.listeners.get()
             this.subscription.tryUnsubscribe()
           }
+          this.oldListeners = function() {
+            if(this.version === '1.0.0') {
+              
+            }
+          }
           this.initSubscription()
           if (shouldHandleStateChanges) {
             this.subscription.trySubscribe()
