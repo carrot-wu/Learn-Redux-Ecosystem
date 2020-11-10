@@ -34,99 +34,285 @@ export function rewriteOnHashChange() {
 
 1. popstate事件只会在浏览器某些行为下触发, 比如点击后退、前进按钮(或者在JavaScript中调用history.back()、history.forward()、history.go()方法)
 2. 调用history.pushState()或者history.replaceState()不会触发popstate事件.
-3. 当网页加载时,各浏览器对popstate事件是否触发有不同的表现,Chrome 和 Safari会触发popstate事件, 而Firefox不会.
+3. 对于a标签的跳转也不会触发popstate事件，对于react-router或者vue-router的单页面路由来说，它们是用过阻止a链接的默认事件手动触发相对应的pushState事件或者replaceState事件。
+4. 当网页加载时,各浏览器对popstate事件是否触发有不同的表现,Chrome 和 Safari会触发popstate事件, 而Firefox不会.
 
-### history路由
-
-## 一些用到的库
-
-接下来将列举一些脚手架开发过程中用到的库。
-
-1. [**commander**](https://github.com/tj/commander.js): node.js 命令行界面的完整解决方案。允许你使用 node.js 快速方便的编写命令行工具。
-2. [**colors**](https://github.com/Marak/colors.js): colors.js 是 NodeJS 终端着色 colors 插件能够美化终端打印出来的信息。
-3. [**inquirer**](https://github.com/Marak/colors.js): 一个可嵌入式的美观的命令行界面，交互式命令行工具。
-4. [**compressing**](https://www.npmjs.com/package/compressing): 一个能够在 node 环境上进行压缩和解压缩的库，我主要是用来解压`npm pack`时下载的 tgz 文件
-5. [**download-git-repo**](https://www.npmjs.com/package/download-git-repo): 一个下载 github 或者 gitlab 远程仓库的库。
-6. [**simple-git**](https://www.npmjs.com/package/simple-git): 一个支持在 node 环境上支持使用 git 命令的库。
-7. [**fs-extra**](https://www.npmjs.com/package/fs-extra): 对于 node 原生的 fs 进行了封装，类似于 jq 的作用。
-
-在 wcli 中暂时提供了三个命令**publish plugin dev**
-
-## wcli publish
-
-顾名思义，publish 就是允许你通过提前配置好一些项目配置，只需要你执行一条命令。那么插件会按照你与写的逻辑进行打包然后对打包的代码进行推送到你制定的仓库。当然你也可以通过一些交互选择打包的变量以及输入 commit 的 message 做到自定义的打包推送。
-只需在 wcliconfig.json 文件夹中对 publish 变量进行一些相关的配置即可。
+因此，我们不仅仅要劫持onpopstate事件，同时也需要劫持pushState和replaceState事件。对于a标签的跳转，因为类似于vue-router的框架内部出发了pushState事件，不在需要监听a标签的事件。
 
 ```ts
-export interface PublishConfig {
-  // git地址
-  git: string;
-  // 仓库名
-  repository: string;
-  // 分支
-  branch: string;
-  // 替换的文件路径
-  target: string;
-  // 静态资源地址 默认是'dist'
-  dist?: string;
-  // 提交时的本地仓库路径 github的话必须提供 gitlab可以不用
-  publishGitDir?: string;
+/**
+ * 重写statechange事件
+ * 注意的是 因为history模式可能为hash 所以需要优先判断hash
+ */
+export function rewriteOnPopState() {
+  // 保留原有的state方法
+  const originEventName = rewriteNameMap.onpopstate;
+  if (!window[originEventName]) {
+    window[originEventName] = window.onpopstate;
+  }
+  const originPopState = window[originEventName];
+  window.onpopstate = function (event: PopStateEvent) {
+    // 优先获取hash的地址 不然的话在获取pathname的地址 因为有可能history模式使用的是hash模式
+    const path = parseHashUrl(window.location.hash) || window.location.pathname;
+    dispatchCustomEvent('historyStateChanged', {
+      path,
+    });
+    return isFunction(originPopState) && originPopState.call(this, event);
+  };
+}
+
+/**
+ * 重写history replaceState 和 pushState事件
+ * @param event
+ */
+export function rewriteHistoryState(event: 'pushState' | 'replaceState') {
+  const originEventName = rewriteNameMap[event];
+  // @ts-ignore
+  if (!window.history[originEventName]) {
+    // @ts-ignore
+    window.history[originEventName] = window.history[event];
+  }
+  // @ts-ignore
+  const originHistoryEvent = window.history[originEventName];
+  if (isFunction(originHistoryEvent)) {
+    window.history[event] = function (...historyArguments) {
+      const { href } = window.location;
+      const [, , url] = historyArguments;
+      // 执行原来的history方法
+      const originReturns = originHistoryEvent.apply(window.history, historyArguments);
+      // 如果跳转的是原地址 或者地址不是字符串 或者跳转地址等于当前地址 那么直接返回不进行相关的上报操作
+      // 都认为是在当前页面
+      if (!url || !isString(url) || url === href) {
+        return originReturns;
+      }
+      // 格式化的url格式
+      const formatHref = parseUrl(href);
+      const formatUrl = parseUrl(url);
+
+      // 获取hash 有时候浏览器支持history模式 就算用的是hash也会以history模式为准
+      const hrefHash = parseHashUrl(formatHref.hash);
+      const urlHash = parseHashUrl(formatUrl.hash);
+      // 跳转pathName不同的时候才进行historyStateChange事件派发
+      if (formatHref.pathname !== formatUrl.pathname) {
+        dispatchCustomEvent('historyStateChanged', {
+          path: formatUrl.pathname,
+        });
+      } else if (hrefHash && urlHash && hrefHash !== urlHash) {
+        // 有时候浏览器支持history模式 就算用的是hash也会以history模式为准
+        dispatchCustomEvent('historyStateChanged', {
+          path: urlHash,
+        });
+      }
+      return originReturns;
+    };
+  }
+}
+```
+**需要注意的是，在vue-router中只要浏览器支持history，即使你手动设置的是hash路由，vue-router内部会使用history api来模拟实现hash路由。所以需要在改写history路由时需要判断当前路由模式使用的是hash路由**
+
+
+## 错误上报
+
+老生常谈的东西-错误上报，在论坛或者掘金上已经有非常多非常棒的文章博客详细的研究过相对应的实现方式，这里我就不再进行赘述了。在项目中，对于全局的异常或者静态资源错误可以监听**error事件即可**，注意的是要判断具体是属于哪种错误。对于没有捕获的promise异常，监听**unhandledrejection**事件即可。
+
+### CSS背景图片的错误上报(background)
+在查找资源的过程中，对于css背景图片的资源错误处理根本找不到= =。对于背景图片的加载错误根本没法通过任何事件去捕获，难道就没有办法上报背景图片的加载错误吗？答案是可行的，我发现可以通过一种比较hack的方式来监听背景图片的错误事件。
+
+大概思路如下：
+1. 在页面加载完整之后，通过遍历dom数获取**backgroundImage**属性中的**url图片地址**
+2. 手动实例化image元素，监听上面获取到的图片地址是否触发error事件即可
+
+但是上面的思路对于静态页面来说是可行的，因为dom树不会再发生变化。但是对于vue和react这种动态渲染节点的框架来说，dom节点内容是动态的，背景图片的加载并不是一开始就初始化的。所以我们需要做到能够监听某个节点元素是否发生了变化，发生变化的时候重新遍历节点树背景图片的url地址。**MutationObserver**恰好可以用来监听元素节点的变化。
+
+#### MutationObserver
+以下内容摘自mdn:
+MutationObserver接口提供了监视对DOM树所做更改的能力。它被设计为旧的Mutation Events功能的替代品，该功能是DOM3 Events规范的一部分。
+
+```js
+// 选择需要观察变动的节点
+const targetNode = document.getElementById('some-id');
+
+// 观察器的配置（需要观察什么变动）
+const config = { attributes: true, childList: true, subtree: true };
+
+// 当观察到变动时执行的回调函数
+const callback = function(mutationsList, observer) {
+    // Use traditional 'for loops' for IE 11
+    for(let mutation of mutationsList) {
+        if (mutation.type === 'childList') {
+            console.log('A child node has been added or removed.');
+        }
+        else if (mutation.type === 'attributes') {
+            console.log('The ' + mutation.attributeName + ' attribute was modified.');
+        }
+    }
+};
+
+// 创建一个观察器实例并传入回调函数
+const observer = new MutationObserver(callback);
+
+// 以上述配置开始观察目标节点
+observer.observe(targetNode, config);
+
+// 之后，可停止观察
+observer.disconnect();
+```
+
+#### 实现
+1. 通过MutationObserver监听根节点元素是否变化，变化的时候重新遍历收集元素的backgroundImage属性中的图片url地址
+2. 手动实例化Image实例，监听图片是否加载失败上报即可。
+
+```ts
+// 用于处理背景图片错误时无法被捕获的事件
+export function handleBackgroundError() {
+  if (!MutationObserver) {
+    return;
+  }
+  const { rootName } = getStoreVal();
+  const cacheImageMap: { [k: string]: string } = {};
+  // 选择需要观察变动的节点
+  const targetNode = document.querySelector(rootName);
+  // 观察器的配置（需要观察什么变动）
+  const config = { childList: true, subtree: true };
+
+  // 通过mutationObserve的dom变化来重新收集backgroundImage
+  const observer = new MutationObserver(() => {
+    try {
+      const imageArray = getElementBackgroundImage(targetNode!);
+      if (Array.isArray(imageArray) && imageArray.length) {
+        imageArray.forEach((imageUrl) => {
+          if (!cacheImageMap[imageUrl]) {
+            cacheImageMap[imageUrl] = imageUrl;
+            // 创建image元素
+            const img = new Image();
+            // @ts-ignore
+            img.onerror = sendResourceError;
+            img.src = imageUrl;
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('mutation observe error');
+    }
+  });
+  observer.observe(targetNode!, config);
+}
+
+/**
+ * 获取元素节点的背景图片地址
+ * @param ele
+ * @param cacheArray
+ */
+export function getCurrentElementBackgroundImage(ele: Element, cacheArray?: string[]) {
+  const backgroundImageArray: string[] = isArray(cacheArray) ? cacheArray : [];
+  const style = window.getComputedStyle(ele);
+  if (!style || !style.backgroundImage) {
+    return;
+  }
+  // 获取图片链接
+  const reURL = /url\((['"])?(.*?)\1\)/gi;
+  let matches = reURL.exec(style.backgroundImage);
+  while (matches !== null) {
+    const url = matches && matches[2];
+    if (url) {
+      backgroundImageArray.push(url);
+    }
+    matches = reURL.exec(style.backgroundImage);
+  }
+  return backgroundImageArray;
+}
+
+export function getElementBackgroundImage(ele?: Element) {
+  const element = ele || document.querySelector('body');
+  const imageArray = getCurrentElementBackgroundImage(element!);
+  const children = element!.querySelectorAll('*');
+  for (let i = 0; i < children.length; i++) {
+    const child = children[i];
+    getCurrentElementBackgroundImage(child, imageArray);
+  }
+  return imageArray;
 }
 ```
 
-调用这条命令的过程中，wcli 会查找插件首页的 publish.js 并且进行执行。同时 wcli 提供了通用的上传仓库方法（当然你可以自己写），所以你可以先处理打包后的逻辑在执行相应提供的**publishFilwTithGit**方法即可快速的实现构建提交的逻辑。
+## 页面性能监控
 
-```js
-// publish.js
-module.exports = async function(context) {
-  const {
-    config: {
-      wcliConfigJson,
-      isDebug: debug,
-      token: publishToken,
-      publishCommitMsg
-    },
-    utils: {
-      getCurrentBinFilePath,
-      publishFileWithGitlabCommit,
-      publishFileWithGit
-    }
-  } = context;
+页面性能监控也是老生常谈了，网上也已经有大量的最佳实践。本质上都是原生的**PerformanceNavigationTiming** api来进行性能监控。注意的是**performance.timing**是早期第一版api，兼容性更好不过精度不高不太准，更推荐使用第二版的api**PerformanceNavigationTiming**（记得做好优雅降级哦）。具体的性能时间看下面这张图就ok啦。
 
-  // 处理打包的逻辑 通过交互进行环境的选择 生成了静态文件之后
-  // 调用提供的publishFileWithGit方法即可进行推送
-  const publishParams = {
-    publishConfig: wcliConfigJson.publish,
-    commitMsg: publishCommitMsg,
-    token: publishToken
-  };
-  publishFileWithGit(publishParams);
+111111111111111111111111111111111111111
+
+具体的数据字典如下
+```ts
+// 页面性能数据字典
+export const performanceDataMap: PerformanceDataMap = {
+  // 阶段性指标
+  dns: {
+    arg: ['domainLookupEnd', 'domainLookupStart'],
+    info: 'DNS查询耗时',
+  },
+  tcp: {
+    arg: ['connectEnd', 'connectStart'],
+    info: 'TCP链接耗时',
+  },
+  response: {
+    arg: ['responseEnd', 'responseStart'],
+    info: '数据传输耗时',
+  },
+  ttfb: {
+    arg: ['responseStart', 'requestStart'],
+    info: 'Time to First Byte（TTFB），网络请求耗时',
+  },
+  dom: {
+    arg: ['domInteractive', 'responseEnd'],
+    info: '可交互 DOM 解析耗时',
+  },
+  dom2: {
+    arg: ['domContentLoadedEventStart', 'domInteractive'],
+    info: '剩余 DOM 解析耗时(DOMContentLoaded 所有DOM元素都加载完毕(除了 async script))',
+  },
+  appCache: {
+    arg: ['domainLookupStart', 'fetchStart'],
+    info: '缓存耗时',
+  },
+  redirect: {
+    arg: ['redirectEnd', 'redirectStart'],
+    info: '重定向耗时(过多重定向影响性能)',
+  },
+  unload: {
+    arg: ['unloadEventEnd', 'unloadEventStart'],
+    info: '前一个页面卸载耗时(前一个页面卸载时可能监听了 unload 做些数据收集，会影响页面跳转)',
+  },
+  DCL: {
+    arg: ['domContentLoadedEventEnd', 'domContentLoadedEventStart'],
+    info: "DOMContentLoaded 事件耗时(document.addEventListener('DOMContentLoaded', cb))",
+  },
+  resources: {
+    arg: ['loadEventStart', 'domContentLoadedEventEnd'],
+    info: '资源加载耗时(完整DOM(DOMContentLoaded)到资源加载完毕(window.onLoad)时间)',
+  },
+  onLoad: {
+    arg: ['loadEventEnd', 'loadEventStart'],
+    info: 'onLoad事件耗时',
+  },
+  firstByte: {
+    arg: ['responseStart', 'domainLookupStart'],
+    info: '首包时间',
+  },
+  fpt: {
+    arg: ['responseEnd', 'fetchStart'],
+    info: 'First Paint Time, 首次渲染时间 / 白屏时间(从请求开始到浏览器开始解析第一批 HTML 文档字节的时间差)',
+  },
+  tti: {
+    arg: ['domInteractive', 'fetchStart'],
+    info: 'Time to Interact，首次可交互时间(浏览器完成所有 HTML 解析并且完成 DOM 构建，此时浏览器开始加载资源)',
+  },
+  ready: {
+    arg: ['domContentLoadedEventEnd', 'fetchStart'],
+    info: 'HTML 加载完成时间， 即 DOM Ready 时间(如果页面有同步执行的 JS，则同步 JS 执行时间 = ready - tti)',
+  },
+  load: {
+    arg: ['loadEventStart', 'fetchStart'],
+    info: '页面完全加载时间(load = 首次渲染时间 + DOM 解析耗时 + 同步 JS 执行 + 资源加载耗时)',
+  },
 };
+
 ```
-
-## wcli plugin
-
-### wcli plugin install
-
-安装插件的操作，目前支持通过 npm 包的形式或者通过 github 或者 gitlab 的地址进行下载
-
-1. 对于 git 地址的形式，wcli 会直接通过`download-git-repo`直接把库下载到目录的 plugin 目录下。
-2. 对于 npm 包的话。最开始想着通过 node_modules 的形式管理插件，但是因为一些原因还是没有选择，通过`npm pack xxx`的形式直接把项目源码下下来之后进行解压缩放进 plugin 目录下。
-3. 对于下下来的插件会自动进行 install（默认使用 yarn）
-
-### wcli plugin list
-
-通过表格显示安装的插件列表，包含插件名，是否 npm，插件的本地目录地址以及插件版本。
-------------------2-----------------
-
-### wcli plugin remove
-
-可以删除插件,默认没有指定插件的话会删除 plugin 下所有目录，指定插件的话会删除指定的插件
-
-### wcli plugin upgrade
-
-**待开发中**，通过插件的版本号来判断是否需要更新，暂时还没开发。
-
-## wcli dev
-
-跟`wcli plugin`挺像，也是通过一些命令行的配置参数，比如说获取当前开发的路由，当前开发的调试环境以及代理地址等等你想自定义的事情，最后可以手动启动一个 devServer 方便开发（本质上还是通过项目 package.json 文件中的 script 命令进行执行）
