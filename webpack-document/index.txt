@@ -46,5 +46,136 @@ tree-shinking
 2. 在babel-loader中告诉babel是用es6的Importexport而不是使用commondjs的 设置module:false
 3.
 https://juejin.im/post/5df884ad6fb9a0164e7f979d#heading-0
-https://mp.weixin.qq.com/s/fGhcSP-SXz3l0Jklrv1I2
-https://juejin.im/post/5e6f4b4e6fb9a07cd443d4a5#heading-17
+https://juejin.cn/post/6844904094281236487#heading-17（再来一打webpack面试题）
+https://juejin.cn/post/6844903544756109319 tree-shaking
+https://juejin.cn/post/6844904161515929614#heading-12
+https://mp.weixin.qq.com/s/IctxecZTCCkowC-ArZ_syQ（重学webpack4之原理分析）
+https://mp.weixin.qq.com/s/9fz3Fl_cC88QFkrxUoBnTQ（webpack 异步加载原理）   
+
+webpack的执行流程
+
+1. 根据传入的命令行参数，合并相关的webpack配置options参数，实例化相关插件，生成complire实例，通过plugin.apply进行注册监听wenpack编译过程中的一些声明狗子
+
+2. 根据watch是否监听文件改动调用run方法或者是watchRun方法（webpack开始执行编译的标志）
+
+3. 开始进行编译流程，初始化实例一个compliration实例， 触发make生命周期钩子。
+
+4. 从入口文件entry开始给一个文件生成一个module实例，加载模块文件，在这过程中根据模块后缀的不同交给不同的loader进行相关的处理。模块内的依赖重复进行上面的步骤
+直到构建完所有的module。触发seal生命周期钩子（这个生命周期是最后添加module实例的最后声明周期钩子）
+
+5. 根据依module依赖关系拼装生成相对应的chunk，并且对chunk还会进行优化处理（比如tree shaking 生成chunkid 对chunk进行排序等等）。
+chunk id生成的算法如下 1入口文件entry的module都生成一个chunk 2 module中的modue依赖也添加进chunk中 3动态加载的module也生成一个chunk中 4 重复上述步骤直到生成所有的chunk
+
+6 把上述生成的chunk生成complation对应的assets对象，这里有四个template的子类 （1 入口entry的template 2动态引入的template 3 chun中module的template）
+根据不同的template进行文本的替换（其实就是替换require，生成立即执行函数，传入module，modueId等参数)。把生成的assets保存在compliation中。触发emit
+生命周期钩子（这个钩子是修改输出文件的最后时机，可以添加输出文件等等）
+
+7. webpack调用complire的emitAssets方法把asset中内容输出到dist指定的文件夹中，触发done生命周期钩子
+
+hash chunkhash contenthash不同
+
+1hash 每次构建都会重新生成新的hash就是每次都见都会变化不利于缓存
+2 chunkhash chunk中的module依赖文件没有发生变化那么久不会修改hash值，一般常用于分离公共代码的chunhash模块
+3 contenthash 文件内容没有发生变化那么hash值就不会变化 一般常用语css文件抽离时使用
+
+bundle chunnk module asset的区别
+1 bundle真正用于html引入的js文件 简单说就是webpack中output输出的文件
+2 chunk module的组合 每一个entry对应一个chunk 动态引入的模块也会生成一个chunk
+3 module 任何一个文件都是module
+4 assets webpack打包完之后输出到dist的所有文件对象
+
+resolve
+1. rsolve.extention 用于指定没有后缀的webpack文件
+2. rsolve.alias 用于作为短路径
+3. resolve。mainfidles 用于指定优先使用es6 后者commonjs来引入模块 常用于tree-shaking
+
+babel的用法
+1 分词解析成ast语法树
+2 transform修改转换语法规则
+3 generate 生成新的代码
+
+babel如何profilly
+1babel-profilly a全局引入包大 b直接在圆形声明方法会覆盖
+2 babel-truntime 自动引入 但是会多次加载新的
+3 babel preset-env
+
+css webpack相关
+css loader 解析css语法
+style loader把css内敛到html文件上
+mini-css-extract-plugin 提取css为单独一个文件 通过link标签引入
+
+性能优化相关
+
+js压缩 tree-shaing 只支持es6代码 jsnext：main webpack自带 producton
+scope hosting
+图片压缩 urlloader
+splitchunplugin 公共代码提取
+chunkhash contenthash 使用缓存
+开启gzip
+开启多线程 happy-pack
+dllplugin 不边的包提前打包
+css 压缩
+
+Webpack 工程相当庞大，但 Webpack 本质上是一种事件流机制。通过事件流将各种插件串联起来，最终完成 Webpack 的全流程，而实现事件流机制的核心是今天要讲的Tapable 模块。
+Webpack 负责编译的 Compiler 和创建 Bundle 的 Compilation 都是继承自 Tapable
+
+webpack tapable
+
+注册事件监听，类似于使用 on 注册监听事件，Tapable 中使用 tap 注册，每个事件点支持插入监听回调；
+触发指定事件，类似于使用 emit 触发事件，Tapable 中使用 call 触发；
+支持多种事件类型，大类上按同步、异步串行、异步并行划分，每个大类下根据回调事件执行方式还有进一步细分。
+支持多种监听事件处理逻辑分类： -------------------------------------------------------------------
+普通模式，事件点上注册的所有监听回调按注册顺序根据事件类型依次调用，相互独立；
+瀑布模式，上一个监听回调执行完成后的返回值将注入下一个监听回调；
+熔断模式，监听回调返回非 null 值将中断剩余回调的调用。
+
+complire与compliation的不同
+complire 值的的是每个wenpack配置对应一个complire，代表webpack从生到死的生命周期
+compliation指的每一次重新构建都会生成一个新的compliation，
+
+comllire比较重要的钩子
+run wathcRun开始编译
+comlire 创建compliation之后
+emit 把asets生成输出到output之前 事修改输出内容的最后钩子
+
+complire中的回调一般传入的是complire参数或者compliation
+
+compliation 比较重要钩子
+seal 处理完搜优模块模块 准备停止接受新的模块
+optimitzechunk 开始优化生成chunks
+
+compliation中的注册的回调一般都是module 以及chunks
+
+compliation中在回调中可以获取到stats对象或者通过compliation.getStats()获取，可以获取到本次编译所有相关的信息
+包括module chunks assets等所有东西Stats
+
+1. 初始化参数：包括从配置文件和 shell 中读取和合并参数，然后得出最终参数；shell 中的参数要优于配置文件 中 的；
+2. 使用上一步得到的参数实例化一个 Compiler 类，注册所有的插件，给对应的 Webpack 构建生命周期绑定 Hook； 
+3. 开始编译：执行 Compiler 类的 run 方法开始执行编译； 
+4. compiler.run 方法调用 compiler.compile ，在 compile 内实例化一个 Compilation 类， Compilation 是做构 建打包的事情，主要事情包括： 1）查找入口：根据 entry 配置，找出全部的入口文件； 2）编译模块：根据文件类型和 loader 配置，使用对应 loader 对文件进行转换处理； 3）解析文件的 AST 语法树； 4）找出文件依赖关系； 5）递归编译依赖的模块。 
+5. 递归完后得到每个文件的最终结果，根据 entry 配置生成代码块 chunk；
+6. 输出所有 chunk 到对应的 output 路径。
+
+热更新 加入 hotModuleReplacemNETpLGIN 以及设置 devserver.hot为true
+大致步骤
+1 修改增加入口entry 添加socke入口 建立socket链接进行双向链接
+2 文件发生改变，webpack重新编译。hotModule会生成两次差异文件列表就是浏览器的updata-json 里面包含了变化文件的chunk值以及本次打包生成的hash值
+3 通过socket发送给客户端 客户端获取到编译的json文件之后。通过hmr发起jsonp请求下载修改过的js文件直接插入到html中进行相对应的更新
+
+webpack-dev-server：启动一个 Express Server，整合 webpack-dev-middleware 中间件、WebSocket 长连接、 proxy、静态资源服务器等功能； 
+webpack-dev-middleware：跟 Webpack 进行交互，通过 Compiler 的 Hook 来监控打包流程，保证文件修改后 打包结束后请求新的文件，上线一个内存型的文件系统，文件直接从内存读取可以提升 webpack-dev-server 的速度。 
+HotModuleReplacementPlugin ：插件是用来生成 HMR 的文件清单列表和差异文件的： 
+manifest 文件：JSON 文件，文件名格式为 [hash].hot-update.json ，包含所有需要更新的文件信息； 
+update 文件：需要更新的 JavaScript 文件，文件名格式为 [id].[hash].hot-update.js ，包含 HMR 的差异化 执行代码。
+
+在hrm中通过memory-fs把打包后的静态文件直接放进内训中，性能会更好
+
+loader的编写 
+loader本质上就是一个函数 第一个参数是传入的文本，第二个是sourcemap注意不能使用箭头函数因为使用到了this
+function (source) {
+    return source
+}
+
+通过asyncCallback = this.async() 生成一个异步的callback 第一个参数是错误第二个是处理后的文本格式
+
+获取传入的loader参数 可以通过loader-utils getOptions方法获取传入的参数 参数只能为this

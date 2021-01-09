@@ -1,3 +1,10 @@
+js中有多少种类型 基本类型 string null boolean number bigint symbol undefined 引用 object
+== 与=== 的区别 new方法干了
+this的几种指向规则
+防抖与节流的却比
+call apply bind的区别
+
+大致讲讲 map some every filter reduce的作用
 == 输入url之后发生的过程
 1. 用户输入url，浏览器会进行判断是进行请求还是搜索内容，如果是搜索内容就会拼接上合理的协议http或者https把url请求丢给网络请求进程。
 2. 网络进程接收到url，判断是否有缓存,如果有的话判断是强缓存还是写上缓存。如果是强缓存直接使用本地缓存，返回200状态码链接结束。如果是协商缓存或者没有缓存就要向服务器请求。（协商缓存头`cache-control` 属性值`no-store`禁止缓存, `no-cache`允许缓存但必须走协商缓存）
@@ -69,6 +76,8 @@ csrf利用登录状态来进行请求的伪造（一般常见于登录了淘宝 
 2 v8把内存分为了新生代和老生带 新生村新对象 老生带存老对象
 3 新生代使用cheeny算法(from to空间 from空间对象是否在用 是的话经历过依次新生代手机那么晋升 不然的话丢到to两级反转) 老生带使用标记清楚(标记未使用的内存进行清楚)
 
+== 数组乱序 sort不行 因为chrome内部使用了快排以及插入排序 需要使用洗牌算法
+
 ==webpack相关 treeshaking (es6 以及commonjs区别 静态编译)
 
 1. webpack中的bundle chunk module有啥区别或者解释一下这三者
@@ -103,7 +112,12 @@ es6。 因为tree-shaking的依赖于es6的静态编译特性，就是说在编�
 而commonjs是基于运行时。即只有动态分析，只有在运行的时候才能确定是否使用了这个模块.（require可以用在条件语句中 import不可以且必须在顶层）
 
 === vue相关
+1. computed 和 watch有什么区别
+1. 讲一下vue的生命周期 初始化 brforeCreated created mounted update beforeupdated updated unmount
+1. 样式中的scoped有什么用 模块化 模块化如何使用全局样式 :global
+1. created中如何获取真实dom节点 异步或者$nextTick
 1. 为什么要用proxy代替Object.defineProtety
+1. watch函数如何在初始化绑定的时候执行依次 immediate：true. 那么深层嵌套的对象变化如何处罚 deep:true
 对于数组或者对象新添加的数据需要重新绑定 并且递归性能差  
 （数组元素的增减是可以进行响应式的 只是类似于[10]的元素很难进行响应式）
 
@@ -161,6 +175,22 @@ type TestA = Test<B, boolean>
 2. 了解docker吗 镜像容器的区别 docker命令 
 3. 解决最难的问题是什么
 4. 有啥想问的
+
+node相关
+nodejs中模块最终导出的都是module.exports，exports只是一个变量保存了modules.exports的引用。最终导出的内容都是modules.exports
+```js
+exports === modules.exports
+// 可行
+exports.a = a
+// 没用 只是改变了当前exports变量的指针地址 最终导出的module.exports还是空对象
+exports = {a,b}
+
+// 有用 直接修改module.exports的指针
+module.exports = {a,b}
+
+// 有用 直接修改指针上的变量
+module.exports.a = a
+```
 
 最后一到简单的题
 

@@ -1,0 +1,100 @@
+version: "3.7"
+services:
+  jd_scripts:
+    image: akyakya/jd_scripts
+    container_name: jd_scripts
+    restart: always
+    #如果需要自定定义定时任务的需要自己写好`my_crontab_list.sh`文件 ，取消下面的注释 ，通过 `volumes`挂载进去。
+    volumes:
+      - ./logs:/scripts/logs
+      #- ./crontab_list.sh:/scripts/docker/crontab_list.sh
+    tty: true
+    environment:
+      # 注意环境变量填写值的时候一律不需要引号（"）下面这些只是事例，根据自己的需求增加删除
+      #jd cookies
+      - JD_COOKIE=pt_key=AAJfx0JsADDIpHymi8WkI1h3YPlVfemiI-aQ-HUWYd2vnGWBUcKxsM8HJLuVa51ZMDuP7XU0Kz4; pt_pin=jd_62a3c894fa502;
+      #微信server酱通
+      - PUSH_KEY=SCU116026Tf8aaf47e260c39c29bb469a5ee8bf3e85f73e9182d443
+      #京东种豆得豆
+      - PLANT_BEAN_SHARECODES=""
+      #京东农场
+      - FRUITSHARECODES=""
+      - FRUIT_BEAN_CARD=""
+      #京东萌宠
+      - PETSHARECODES=""
+      - JOY_FEED_COUNT=""
+      #京小超
+      - SUPERMARKET_SHARECODES=""
+      - SUPERMARKET_UPGRADE=true
+      #兑换多少数量的京豆（1-20之间，或者1000），0默认兑换不兑换，如需兑换把0改成1-20之间的数字或者1000即可
+      - MARKET_COIN_TO_BEANS=""
+      #是否开启debug模式打印日志
+      - JD_DEBUG=""
+      #该字段必须配置是否使用了自定义定时任务列表,使用了需要把这个名字改成my_crontab_list.sh
+      #- CRONTAB_LIST_FILE=my_crontab_list.sh
+    command:
+      - /bin/sh
+      - -c
+      - |
+        #crontab /scripts/docker/my_crontab_list.sh #如果挂载了自定义任务文件 需要在 crond 的上面加行
+        crond
+        node
+  jd_scripts_2:
+    image: akyakya/jd_scripts
+    container_name: jd_scripts2
+    restart: always
+    volumes:
+      - ./logs2:/scripts/logs
+    #   - ./my_crontab_list.sh:/scripts/docker/my_crontab_list.sh
+    tty: true
+    environment:
+      # 注意环境变量填写值的时候一律不需要引号（"）下面这些只是事例，根据自己的需求增加删除
+      #jd cookies
+      - JD_COOKIE=pt_key=AAJfx0CEADD5ItgNcNv03MJCjwtPS3Jk6AhQuQPfcIZizIpZiQo4To888zB5pCtPXYxuJgmvjjs; pt_pin=15622768102_p;&pt_key=AAJfx0GWADBXSrOmVhhyDk9tkX1Nfp2iKGEmc8dWaMo6qjLiOCLVcezPx4KJq4vY3fBpEmUgZHg; pt_pin=jd_787e6f946a189;
+      #微信server酱通
+      - PUSH_KEY=SCU116026Tf8aaf47e260c39c29bb469a5ee8bf3e85f73e9182d443
+      #京东种豆得豆
+      - PLANT_BEAN_SHARECODES=""
+      #京东农场
+      - FRUITSHARECODES=""
+      - FRUIT_BEAN_CARD=true
+      #京东萌宠
+      - PETSHARECODES=""
+      - JOY_FEED_COUNT=""
+      #京小超
+      - SUPERMARKET_SHARECODES=""
+      - SUPERMARKET_UPGRADE=true
+      - SUPERMARKET_LOTTERY=true
+      - BUSINESS_CIRCLE_JUMP=true
+      #兑换多少数量的京豆（1-20之间，或者1000），0默认兑换不兑换，如需兑换把0改成1-20之间的数字或者1000即可
+      - MARKET_COIN_TO_BEANS=""
+      #是否开启debug模式打印日志
+      - JD_DEBUG=""
+      #该字段必须配置是否使用了自定义定时任务列表,使用了需要把这个名字改成my_crontab_list.sh
+      - CRONTAB_LIST_FILE=crontab_list.sh
+      #取关数量
+      - UN_SUBSCRIBES=100&100
+    command:
+      - /bin/sh
+      - -c
+      - |
+        #crontab /scripts/docker/my_crontab_list.sh #如果挂载了自定义任务文件 需要在 crond 的上面加行
+        crond
+        node
+  bilibili-helper:
+    image: superng6/bilibili-helper:latest
+    container_name: bilibili-helper
+    environment:
+      - PUID=1026
+      - PGID=100
+      - TZ=Asia/Shanghai
+      - TASK=1d
+      - DEDEUSERID=11512461
+      - SESSDATA=e1a8543a%2C1621656981%2C4d149*b1
+      - BILI_JCT=1190b8b12e4fd2ef79dbdf3c1fedbcb4
+      - SERVERPUSHKEY=SCU116026Tf8aaf47e260c39c29bb469a5ee8bf3e85f73e9182d443
+      - CUSP=false
+      - CRON=false
+    volumes:
+      - ./appdata/config:/config
+    restart: unless-stopped
