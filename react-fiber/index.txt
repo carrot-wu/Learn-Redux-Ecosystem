@@ -1,12 +1,164 @@
+最新的理解
+写的非常棒的fiber理解文章 https://react.iamkasong.com/preparation/newConstructure.html#react16%E6%9E%B6%E6%9E%84
+
+在react16之前 react分为两个阶段
+1 reconciler 协调器 这个阶段的作用主要是把转化jsx为虚拟dom，并且比对虚拟dom进行differ 然后交给render渲染器进行渲染
+2 render 渲染器 就是react.rednderDom 把比对好的虚拟dom转化为dom节点插入到浏览器环境中
+
+这种情况下 两个步骤的执行流程都是同步的，并且虚拟dom渲染成真实dom的过程是递归这样子导致js执行的话会卡
+因为一阵需要做一些事
+
+所以诞生了fiber概念 其实就是时间分片
+
+在react16以后 分成了三个阶段
+1. schedule 调度器 给任务分优先级并且进行调度，高优先级的任务优先执行，低优先级任务往后。高优先级的任务还会直接进行插入
+2. reconciler 协调器 生成相应的fiber树（链表结构），并且根据根据differ生成新的fiber树并且打上相对应的effect。简单说还是处理虚拟dom，注意的是
+这一过程中因为fiber是双向链表结构，因此变成了循环。在循环的过程中，会判断帧是否还有多余的时间处理，没有的话会直接进行打断（高优先级的任务还会直接进行插入）
+得益于fiber双向链表结构（sibling child return），因此能够随时打断并且重新回到打断的地方继续。
+3.  render渲染器，根据上方生成的fiber工作节点根据effect的tag标签进行渲染操作到浏览器中，这一步不能被打断会执行下去
+
+#Fiber的结构
+你可以从这里看到Fiber节点的属性定义 (opens new window)。虽然属性很多，但我们可以按三层含义将他们分类来看
+
+function FiberNode(
+  tag: WorkTag,
+  pendingProps: mixed,
+  key: null | string,
+  mode: TypeOfMode,
+) {
+  // 作为静态数据结构的属性
+  this.tag = tag;
+  this.key = key;
+  this.elementType = null;
+  this.type = null;
+  this.stateNode = null;
+
+  // 用于连接其他Fiber节点形成Fiber树
+  this.return = null;
+  this.child = null;
+  this.sibling = null;
+  this.index = 0;
+
+  this.ref = null;
+
+  // 作为动态的工作单元的属性
+  this.pendingProps = pendingProps;
+  this.memoizedProps = null; fiber的props
+  this.updateQueue = null; fiber中的useEffect组成的双向链表
+  this.memoizedState = null;fiber中的hook链表
+  this.dependencies = null;
+
+  this.mode = mode;
+
+  this.effectTag = NoEffect;
+  this.nextEffect = null;
+
+  this.firstEffect = null;
+  this.lastEffect = null;
+
+  // 调度优先级相关
+  this.lanes = NoLanes;
+  this.childLanes = NoLanes;
+
+  // 指向该fiber在另一次更新时对应的fiber
+  this.alternate = null;
+}
+
 fiber 架构把渲染分成了额两个阶段 一个是render和render之前称作为协调（render 阶段） render之后的称为commit阶段
 render阶段在新的fiber架构下可能会出现多次打断的情况
 原先的react渲染是基于调用栈的数据结构去渲染的 每次setState时 组件都会依照栈的形式从头到尾全部处理完才会进行渲染 （同步递归 一路向下 ）
 所以对于一些用时较长的执行函数或者一些长列表 如果渲染的时间超过16ms就会产生卡顿。
 但是每一帧都只有16ms 如果超出时间 动画就会卡顿
 
+其中 schedule以及reconciler阶段都称为render阶段 rendener渲染器称为渲染阶段
+
+## reconciler 协调器中是如何做 dom树的构建以及更新的呢 ----双缓存技术
+
+a: 旧的dom节点 b：新的dom节点 在b操作完diff之后直接渲染到浏览器 就不会有渲染跳来跳去的效果 这就是双缓存技术
+
+fiber的更新也是如此。当前的fiber树叫做currentFibertree  内存总工作的是workinprogessFiber就是构建中的fiber
+
+workinfiber构建完成之后 就会交换
+
+
+## fiber的执行流程 render阶段
+
+前面说了本质上虚拟dom变成了fiber节点，所以可以归结为如何diff出新的fiber节点
+
+1. beginwork。“递阶段” 深度优先遍历处理每一个循环到的节点，如果有子节点的话继续一直遍历直到没有子节点。
+2. 这时候会执行completework方法处理，遇到兄弟节点的话继续执行3的步骤。不是的话返回父节点继续执行completework。继续递归
+3. 遇到兄弟节点。重新执行12步骤。直到rootFiber执行完
+
+beginWork 还有completework其实都是在进行differ阶段 生成一些diff的edffect以及相应的tag操作
+
+接下来就回到fiber生成真实dom节点的 commitwork阶段（commit阶段）
+
+## commit阶段
+
+## differ函数
+1: 单节点： keytype相同才复用，进入到props的修改进行diff。key type一个不同就直接删除重建
+
+2. 多节点
+
+========================
+# 状态更新的整个流程
+
+## 触发状态更新
+1. ReactDOM.render
+2. this.setState
+3. this.forceUpdate
+4. useState
+5. useReducer
+
+## 创建updateAction
+
+## 交有schedule进行调度，当前任务能够进入协调器中国
+
+## reconciler协调器进行， 从当前rootFiber开始以深度优先遍历的形式对fiber节点调用beginwork以及completework方法，生成新的workinfiberRoot
+在beginworj以及completework中，进行diff对要修改或者变化的fiber节点打上相关的tag以及effect
+以及对需要的更新打上tag以及effect
+beginwork。
+completework阶段
+
+## 交有renderer渲染器进行渲染到真是dom节点 commit阶段
+
+## 完整流程
+触发状态更新（根据场景调用不同方法）
+    |
+    |
+    v
+创建Update对象（接下来三节详解）
+    |
+    |
+    v
+从fiber到root（`markUpdateLaneFromFiberToRoot`）
+    |
+    |
+    v
+调度更新（`ensureRootIsScheduled`）
+    |
+    |
+    v
+render阶段（`performSyncWorkOnRoot` 或 `performConcurrentWorkOnRoot`）
+    |
+    |
+    v
+commit阶段（`commitRoot`）
+
+## update
+
+触发刷新的操作都会创建update的action对象 放在fiber的updateQueue上
+
+## Scheduler调度器的实现
+主要是两方面: 
+时间分片 以及 优先级调度
+
+### 时间切片的原理
+时间切片的原理是基于原生api requestIdleCallback 不过有api性问题，所以react官方通过messageChannel以及setTimeout进行了proliffy
+==============
 ### 浏览器一针的工作
 1. 处理用户的交互
-2. JS 解析执行
+2. JS 解析执行（可以细分为处理 宏任务  所有微任务）
 3. 帧开始。窗口尺寸变更，页面滚去等的处理
 4. rAF(requestAnimationFrame)
 5. 布局

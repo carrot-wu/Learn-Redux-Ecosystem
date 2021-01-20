@@ -54,3 +54,31 @@ https://mp.weixin.qq.com/s/vDJ_Txm4wi-cMVlX5xypLg
 8.执行生命周期 componentWillUpdate。
 9.执行真正的更新， render。
 10.执行生命周期 componentDidUpdate。
+
+
+我的理解
+
+1. 在生命周期钩子，或者react的时间函数中会在开始设置isBatchingUpdates为true，标志着进入批量更新状态
+2. 在执行setState函数时会把state放进pendingStateQueue的一个队列中，里面放置了需要更新的state值
+3. 判断当前是否处于批量更新状态isBatchingUpdates，如果为true的话那么会把当前组件实例放进dirtyComponents中，过会儿在更新。
+4. 如果不是的话（这种情况就出现在下面）就会执行batchingUpdate方法执行dom的更新操作
+5. 等待等钱生命周期钩子或者事件执行完，这时候批量更新就是false了
+6。这时候就会循环批量更新dirtyComponent，执行updateComponent进行更新
+7. 不是的话会调用transcation事务机制的wrap方法，遍历执行更新组件队列进行更新
+8. 触发componentwillReceiveProps
+9. 执行生命周期 componentShouldUpdate，根据返回值判断是否要继续更新
+10. 将组件的state暂存队列中的 state进行合并，获得最终要更新的state对象，并将队列置为空。
+
+
+add = () => {
+  isBatchingUpdates = true
+  批量更新状态
+  setTimeout(() => {
+    // 这时候已经外层函数执行完了 批量更新状态为false
+  })
+isBatchingUpdates = false
+}
+
+我看过最明了的setState文章
+
+https://juejin.cn/post/6919115403146821639

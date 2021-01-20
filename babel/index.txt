@@ -1,0 +1,37 @@
+
+babel本质上就是一个js语法编译器 传统分为三步
+
+1. 分词解析 str转ast语法树 这一步 考@babel/parse来实现
+2. 语法转换或者修改 这一步通过 @babel/trvase来实现 通过访问者模式可以访问ast语法树上特定的语法节点，一般搭配@babel/types一起使用 这个库
+是一些判断类型的库
+3. 生成新的js代码 一般通过@babel/generate这个库来实现
+
+本质上babel插件的实现就是处于第二步 返回一个方法即可 直接返回生辰过的ast语法树 
+
+
+babel如何做高版本代码的兼容的呢
+
+首先高版本的代码兼容分成两种 一种是能够proliffy的例如 箭头函数 const这种
+另外一种是api 例如promise或者array.include
+
+对于第一种直接引入
+@babel-preset-es-2015
+
+对于第二种直接引入 @babel-proliffy即可 不过都是全量引入 所以改了
+以前的话
+
+
+高级的proliflly有两种办法 一种是 preset-env plugin-transform-runtime来实现 （两者区别）
+
+；两者区别（babel、preset-env能够根据浏览器版本来进行按需加载）
+
+plugin0transform-runtime(不会在全局添加proliffy，但是会打包所有proliffy，用来当做库开发的profilly插件)
+
+两种的区别在于 一个是全局rpofilly 一种是非全局 对于库来说用plugin-transforn-runtime
+
+@babel/preset-env 同时设置 useBuiltsin 为usage即可 就会按需加载相关的依赖
+
+
+
+根据babel官方来说
+开发库最好用babel-plugin-runtime来实现 设置core-js3即可
