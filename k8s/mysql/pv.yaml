@@ -1,0 +1,35 @@
+## pv
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: mysql-pv
+  namespace: blog-project
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 2Gi
+  persistentVolumeReclaimPolicy: Retain
+  mountOptions:
+   - hard
+   - nfsvers=4
+  storageClassName: nfs
+  nfs:
+    path: /mysql
+    server: 172.17.16.11
+
+---
+## PVC
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysql-pvc
+  namespace: blog-project
+spec:
+  storageClassName: nfs
+  resources:
+    requests:
+      storage: 2Gi        #设置 pvc 存储资源大小
+  accessModes:
+    - ReadWriteOnce

@@ -1,0 +1,31 @@
+global:
+  scrape_interval:     15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['118.89.155.41:9090']
+  - job_name: 'node_exporter'
+    static_configs:
+      - targets: ['118.89.155.41:9100']
+        labels:
+          instance: 'node_exporter'
+  - job_name: 'mysql_exporter'
+    static_configs:
+      - targets: ['118.89.155.41:9102']
+        labels:
+          instance: 'mysql_exporter'
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['118.89.155.41:9103']
+        labels:
+          instance: 'cadvisor'
+
+rule_files:
+  - 'memory_high.yml'
+  - 'server_down.yml'
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["118.89.155.41:9104"]

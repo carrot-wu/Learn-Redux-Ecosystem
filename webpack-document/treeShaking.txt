@@ -1,0 +1,27 @@
+
+1. tree shaking为什么只适用于esm模块
+
+tree shaking需要在编译时确定依赖关系。esm模块是静态编译，在编译时就能确定相关的依赖关系。cjs属于动态的，在运行时才能确定相关的依赖关系
+
+esm表现为
+1 import语句必须在顶层，cjs克放在条件语句中
+2 import语法只支持字符串，cjs支持变量
+3 esm导入的是值的引用，cjs是值的浅拷贝
+
+2. 什么是副作用
+
+对于一些esm模块，可能因为外部的副作用关系部分模块不能经过tree-skaking的优化，这时候可以再package.json中设置sideEffects来告诉webapck不经过tree-shaking。
+
+3 tree-shaking的最佳实践
+
+1. 使用export导出代替export default 一个对象。更方便与tree-shaking。
+2 因为类的特殊性，累的静态方法以及类方法并不会进行优化
+
+
+为了方便库的使用者进行自主选择esm模块或者cjs模块。所以在库的开发中应该打包出多重模块拱使用者引入。
+
+其中main最好使用umd模块支持cjs以及browser
+
+modules = esm模块用于方便tree-shaking。
+
+browser 使用iffee模块用于浏览器的调用

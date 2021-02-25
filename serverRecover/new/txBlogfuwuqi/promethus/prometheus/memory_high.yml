@@ -1,0 +1,13 @@
+groups:
+  - name: memory_high
+    rules:
+    - alert: HostMemory Usage
+      expr: (node_memory_MemTotal_bytes - (node_memory_MemFree_bytes + node_memory_Buffers_bytes + node_memory_Cached_bytes)) / node_memory_MemTotal_bytes * 100 >  80
+      for: 1m
+      labels:
+        name: Memory
+        severity: Warning
+      annotations:
+        summary: " {{ $labels.appname }} "
+        description: "宿主机内存使用率超过80%."
+        value: "{{ $value }}"

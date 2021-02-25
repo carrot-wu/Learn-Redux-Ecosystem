@@ -1,0 +1,99 @@
+################################################################
+#
+# Configuration sample for Traefik v2.
+#
+# For Traefik v1: https://github.com/containous/traefik/blob/v1.7/traefik.sample.toml
+#
+################################################################
+
+################################################################
+# Global configuration
+################################################################
+[global]
+  checkNewVersion = true
+  sendAnonymousUsage = true
+
+################################################################
+# Entrypoints configuration
+################################################################
+
+# Entrypoints definition
+#
+# Optional
+# Default:
+[entryPoints]
+  [entryPoints.web]
+    address = ":80"
+
+  [entryPoints.websecure]
+    address = ":443"
+
+################################################################
+# Traefik logs configuration
+################################################################
+
+# Traefik logs
+# Enabled by default and log to stdout
+#
+# Optional
+#
+[log]
+  level = "DEBUG"
+  format = "json"
+
+[accessLog]
+  format = "json"
+################################################################
+# API and dashboard configuration
+################################################################
+
+# Enable API and dashboard
+[api]
+
+  # Enable the API in insecure mode
+  #
+  # Optional
+  # Default: false
+  #
+  insecure = true
+
+  # Enabled Dashboard
+  #
+  # Optional
+  # Default: true
+  #
+  # dashboard = false
+
+################################################################
+# Ping configuration
+################################################################
+
+# Enable ping
+[ping]
+
+  # Name of the related entry point
+  #
+  # Optional
+  # Default: "traefik"
+  #
+  # entryPoint = "traefik"
+
+################################################################
+# Docker configuration backend
+################################################################
+[pilot]
+    token = "c69dfe5a-dcfe-41fd-ac59-8056fbd4cb7a"
+
+# Enable Docker configuration backend
+[providers.docker]
+
+[providers.file]
+    watch = true
+    directory = "/etc/traefik"
+    debugLogGeneratedTemplate = true
+
+[certificatesResolvers.le.acme]
+  email = "carrotwuhongrui@gmail.com" # 你自己的邮箱
+  storage = "./letsencrypt/acme.json"
+
+  [certificatesResolvers.le.acme.tlsChallenge]

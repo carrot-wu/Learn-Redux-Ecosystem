@@ -1,0 +1,180 @@
+[http.routers]
+  [http.routers.blog]
+    rule = "Host(`carrotwu.com`) || Host(`www.carrotwu.com`)"
+    service = "blog"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]	
+
+  [http.routers.blog-tls]
+    rule = "Host(`carrotwu.com`) || Host(`www.carrotwu.com`)"
+    service = "blog"
+    entryPoints = ["websecure"]
+    [http.routers.blog-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+  [http.routers.metrics]
+    rule = "Host(`metrics.carrotwu.com`)"
+    service = "metrics"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]
+
+  [http.routers.metrics-tls]
+    rule = "Host(`metrics.carrotwu.com`)"
+    service = "metrics"
+    entryPoints = ["websecure"]
+    [http.routers.metrics-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  # http接口redirect是下面配的http转https
+  [http.routers.traefik]
+    rule = "Host(`traefik.carrotwu.com`)"
+    service = "api@internal"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]
+
+  [http.routers.traefik-tls]
+    rule = "Host(`traefik.carrotwu.com`)"
+    service = "api@internal"
+    entryPoints = ["websecure"]
+    middlewares = ["dashboard-auth"]
+    [http.routers.traefik-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  [http.routers.prome]
+    rule = "Host(`prome.carrotwu.com`)"
+    service = "prome"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]
+
+  [http.routers.prome-tls]
+    rule = "Host(`prome.carrotwu.com`)"
+    service = "prome"
+    entryPoints = ["websecure"]
+    [http.routers.prome-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  [http.routers.drone]
+    rule = "Host(`drone.carrotwu.com`)"
+    service = "drone"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]
+
+  [http.routers.drone-tls]
+    rule = "Host(`drone.carrotwu.com`)"
+    service = "drone"
+    entryPoints = ["websecure"]
+    [http.routers.drone-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  [http.routers.ssr]
+    rule = "Host(`ssr.carrotwu.com`)"
+    service = "ssr-blog"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]
+
+  [http.routers.ssr-tls]
+    rule = "Host(`ssr.carrotwu.com`)"
+    service = "ssr-blog"
+    entryPoints = ["websecure"]
+    [http.routers.ssr-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  [http.routers.ssr-api]
+    rule = "Host(`ssr.carrotwu.com`) && PathPrefix(`/api/`)"
+    entryPoints = ["websecure"]
+    middlewares = ["stripApi"]
+    service = "apiSer"
+    [http.routers.ssr-api.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  [http.routers.admin]
+    rule = "Host(`admin.carrotwu.com`)"
+    service = "admin"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]
+
+  [http.routers.admin-tls]
+    rule = "Host(`admin.carrotwu.com`)"
+    service = "admin"
+    entryPoints = ["websecure"]
+    [http.routers.admin-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  [http.routers.docker]
+    rule = "Host(`docker.carrotwu.com`)"
+    service = "docker"
+    entryPoints = ["web"]
+    #middlewares = ["harborProxy"]
+    middlewares = ["redirect"]
+
+  [http.routers.docker-tls]
+    rule = "Host(`docker.carrotwu.com`)"
+    service = "docker"
+    entryPoints = ["websecure"]
+    #middlewares = ["harborProxy"]
+    [http.routers.docker-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+  [http.routers.apiServer]
+    rule = "Host(`api.carrotwu.com`)"
+    service = "apiSer"
+    entryPoints = ["web"]
+    middlewares = ["redirect"]
+
+  [http.routers.apiServer-tls]
+    rule = "Host(`api.carrotwu.com`)"
+    service = "apiSer"
+    entryPoints = ["websecure"]
+    [http.routers.apiServer-tls.tls]
+      certResolver = "le" # From static configuration
+      options = "default"
+
+[http.services]
+  [[http.services.blog.loadBalancer.servers]]
+    url = "http://118.89.155.41:8888/"
+  [[http.services.ssr-blog.loadBalancer.servers]]
+    url = "http://118.89.155.41:8088/"
+  [[http.services.admin.loadBalancer.servers]]
+    url = "http://118.89.155.41:8777/"
+  [[http.services.apiSer.loadBalancer.servers]]
+    #url = "http://118.89.155.41:8082/"
+    url = "http://118.89.155.41:4000/"
+  [[http.services.docker.loadBalancer.servers]]
+    url = "http://118.89.155.41:5000/"
+  [[http.services.drone.loadBalancer.servers]]
+    #url = "http://drone/"
+    url = "http://118.89.155.41:3000/"
+  [[http.services.prome.loadBalancer.servers]]
+    url = "http://118.89.155.41:9090/"
+  [[http.services.metrics.loadBalancer.servers]]
+    url = "http://118.89.155.41:9105/"
+[http.middlewares]
+   [http.middlewares.dashboard-auth.basicAuth]
+   users = [
+     "carrotwu:$apr1$W/bRKCDC$ChKADC3MMeAphTZ9/8kw8/"
+   ]
+  [http.middlewares.stripApi.stripPrefix]
+   prefixes = ["/api"]
+  [http.middlewares.redirect.redirectScheme]
+  scheme = "https"
+  #外部ssl 内部的harborhttp访问任然不想因此需要在这做调整
+  [http.middlewares.harborProxy.headers.customRequestHeaders]
+  X-Forwarded-Proto = "https"
+
+# Dynamic configuration
+
+[tls.options]
+
+  [tls.options.default]
+    maxVersion = "VersionTLS13"
+
+  [tls.options.maxtls12]
+    maxVersion = "VersionTLS12"

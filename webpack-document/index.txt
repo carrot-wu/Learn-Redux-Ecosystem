@@ -179,3 +179,17 @@ function (source) {
 通过asyncCallback = this.async() 生成一个异步的callback 第一个参数是错误第二个是处理后的文本格式
 
 获取传入的loader参数 可以通过loader-utils getOptions方法获取传入的参数 参数只能为this
+
+
+==========================
+动态导入 dynamicImport的实现 就是vue react中的路由切割
+
+import（）的语法
+本质上都是调用require.ensure方法，esm的动态导入暂时还处在statge-4
+
+动态导入返回的是一个promise函数
+
+1. webpack会对动态导入的模块拆分成一个单独的chunk，在mainifest中会对当前模块进行模块id映射
+2. 全局变量上有个webpack——enquire的变量用于缓存加载过的动态模块，判断模块是否已经加载过，有的话直接resolve
+3. 发起jsonp请求，创建script标签对onload以及error进行处理对应resolve以及reject处理
+4. 执行then后面对应的回调 

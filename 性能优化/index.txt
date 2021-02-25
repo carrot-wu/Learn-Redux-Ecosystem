@@ -1,0 +1,31 @@
+
+http方面
+dns解析。 => dns缓存 cdn
+发起http请求 => http的缓存 协商缓存以及强缓存
+发起多个请求 => http2技术以及keep-alive
+
+渲染
+减小回流重绘
+动画交由css来实现 transform 
+一些复杂的动态可以提升到合成层
+
+css先解析 js后异步解析不阻塞 可以通过defer 或者async defer会更好
+
+图片压缩
+
+webpack的一些性能优化 
+
+打包
+
+善用缓存，eslint的缓存
+一些作用区间进行排除 exclude 以及 include
+启用多线程打包 happypack 
+一些不变的库通过cdn引入，抽离出webpack
+
+构建
+
+路由分块技术 dymaicimport的实现 可以看webpack-document
+tree-shaking
+公共代码合并 -splitchunplugin
+代码压缩
+

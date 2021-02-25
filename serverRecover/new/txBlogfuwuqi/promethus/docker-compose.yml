@@ -1,0 +1,59 @@
+version: '3'
+
+services:
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    volumes:
+      - ./prometheus:/etc/prometheus
+    ports:
+      - 9090:9090
+    restart: on-failure
+    #command: 
+      #- '--web.enable-lifecycle '
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - 9105:3000
+  node_exporter:
+    image: prom/node-exporter
+    container_name: node_exporter
+    ports:
+      - 9100:9100
+  #redis_exporter:
+    #image: oliver006/redis_exporter
+    #container_name: redis_exporter
+    #command:
+      #- "--redis.addr=redis://127.0.0.1:6379"
+      #- "--redis.password 'ZHONG9602.class'"    # 认证密码，如果没有密码，该参数不需要
+    #ports:
+      #- 9101:9121
+    #restart: on-failure
+  mysql_exporter:
+    image: prom/mysqld-exporter
+    container_name: mysql_exporter
+    environment:
+      - DATA_SOURCE_NAME=carrotwu:wu823892@(database:3306)/
+    ports:
+      - 9102:9104
+  cadvisor:
+    image: google/cadvisor
+    container_name: cadvisor
+    volumes:
+      - /:/rootfs:ro
+      - /var/run:/var/run:rw
+      - /sys:/sys:ro
+      - /var/lib/docker/:/var/lib/docker:ro
+    ports:
+      - 9103:8080
+  alertmanager:
+    image: prom/alertmanager
+    container_name: alertmanager
+    volumes:
+      - ./alertmanager:/etc/alertmanager
+    ports:
+      - 9104:9093
+networks:
+  harbor_harbor:
+    external: true

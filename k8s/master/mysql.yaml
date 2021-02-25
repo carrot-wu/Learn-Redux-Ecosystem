@@ -1,0 +1,91 @@
+## pv
+---
+kind: PersistentVolume
+apiVersion: v1
+metadata:
+  name: mysql-pv
+  namespace: blog-project
+spec:
+  accessModes:
+    - ReadWriteOnce
+  capacity:
+    storage: 2Gi
+  persistentVolumeReclaimPolicy: Retain
+  storageClassName: nfs
+  nfs:
+    path: /data/nfs/mysql
+    server: 172.17.16.11
+
+---
+## PVC
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: mysql-pvc
+  namespace: blog-project
+spec:
+  resources:
+    requests:
+      storage: 2Gi        #设置 pvc 存储资源大小
+  accessModes:
+    - ReadWriteOnce
+  selector:
+    matchLabels:
+      app: mysql           #根据 Label 选择对应 PV
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysql
+  namespace: blog-project
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - name: mysql
+          image: mysql
+          env:
+            - name: MYSQL_ROOT_PASSWORD
+              value: "wu823892"
+            - name: MYSQL_USER
+              value: "carrotwu"
+            - name: MYSQL_PASSWORD
+              value: "wu823892"
+            - name: TZ
+              value: "Asia/Shanghai"
+          ports:
+            - containerPort: 3306
+          volumeMounts:
+            - name: mysql-persistent-storage
+              mountPath: /var/lib/mysql
+      volumes:
+        - name: mysql-persistent-storage
+          persistentVolumeClaim:
+            claimName: mysql-pvc
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysql
+  namespace: blog-project
+spec:
+  type: NodePort
+  ports:
+    - port: 3306
+      targetPort: 3306
+      nodePort: 30306
+  selector:
+    app: mysql
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: blog-project

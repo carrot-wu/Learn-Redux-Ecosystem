@@ -1,0 +1,40 @@
+﻿version: "3.7"
+services:
+  traefik:
+    image: traefik:latest # 我们直接部署最新版本，可自行调整
+    container_name: traefik
+    environment:
+      - TZ=Asia/Shanghai
+    restart: always
+    networks: 
+      - default
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      # 自动申请的证书存放位置，我们需要在当前目录创建 letsencrypt 目录
+      - ./letsencrypt:/letsencrypt
+      - /var/run/docker.sock:/var/run/docker.sock
+      # 绑定我们的配置目录
+      - ./traefik:/etc/traefik
+
+  #jenkins:
+    #user: root
+    #restart: always
+    #image: jenkins/jenkins
+    #container_name: jenkins
+    #environment:
+      #- TZ=Asia/Shanghai
+    #ports:
+      #- "8999:8080"
+    #volumes:    # 卷挂载路径
+      #- ./jenkins_home/:/var/jenkins_home  # 这是我们一开始创建的目录挂载到容器内的jenkins_home目录
+      #- /var/run/docker.sock:/var/run/docker.sock
+      #- /usr/bin/docker:/usr/bin/docker     # 这是为了我们可以在容器内使用docker命令
+      #- /usr/local/bin/dockerCommpose/docker-compose.yml:/usr/bin/dockerCommpose/docker-compose.yml # 同样的这是为了使用docker-compose
+      #- /usr/local/bin/docker-compose:/usr/bin/docker-compose
+
+networks:
+  harbor_harbor:
+    external: true
