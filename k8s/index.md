@@ -230,6 +230,13 @@ wget https://raw.githubusercontent.com/coreos/flannel/master/Documentation/kube-
 ```
 >如果下载不了，手动访问当前文件直接通过linux命令创建复制也可以
 
+使用 kubectl apply 命令加载下服务。
+
+```js
+kubectl apply -f kube-flannel.yml
+```
+
+在大约稍后1分钟左右，我们可以使用 `kubectl get nodes` 命令查看节点的运行状态。如果 STATUS = ready，则代表启动成功。
 
 ### node节点安装
 **在安装 Node 节点前，我们仍然需要操作一遍上面的k8s以及docker的安装**。 Node 节点的地位则是负责运行服务容器，负责接收调度的。  
@@ -272,7 +279,7 @@ kubeadm token create --print-join-command
 ```
 遇到的坑：
 
-在这一步的时候发现老是执行不成功，错误提示为： 
+1. 在这一步的时候发现老是执行不成功，错误提示为： 
 
 ```js 
 
@@ -320,6 +327,19 @@ Jan 25 15:12:27 node1 kubelet[15008]: F0125 15:12:27.637637   15008 server.go:26
     "https://docker.mirrors.ustc.edu.cn"
   ]
 }
+```
+2. 节点不处于同一个内网环境下
+因为我的一台机器是阿里云的服务器，master节点是腾讯云的机器。并不处于同一个内网环境中。这时候需要做映射。
+如果node节点跟master节点不处于同一个内网环境下，也就是说node节点ping不通master节点的内网ip。那么在加入master节点的时候会报一下错误：
+
+```js
+	[WARNING Hostname]: hostname "node2" could not be reached
+	[WARNING Hostname]: hostname "node2": lookup node2 on 100.100.2.138:53: no such host
+```
+解决方案：在node服务器上执行如下语句:
+
+```js
+iptables -t nat -A OUTPUT -d [master节点内网ip，也就是kubeadm join xxx对应的ip] -j DNAT --to-destination [master节点外网ip]
 ```
 
 ## 使用nfs挂载

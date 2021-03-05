@@ -191,5 +191,6 @@ import（）的语法
 
 1. webpack会对动态导入的模块拆分成一个单独的chunk，在mainifest中会对当前模块进行模块id映射
 2. 全局变量上有个webpack——enquire的变量用于缓存加载过的动态模块，判断模块是否已经加载过，有的话直接resolve
-3. 发起jsonp请求，创建script标签对onload以及error进行处理对应resolve以及reject处理
-4. 执行then后面对应的回调 
+3. 全局有一个jsoncallback存储脚本的promise回调
+4. 发起jsonp请求，创建script标签对onload以及error进行处理对应resolve以及reject处理
+5. 执行then后面对应的回调 

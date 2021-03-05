@@ -1,0 +1,12 @@
+
+spawn exec execFile fork之间的区别
+
+其中exec execFile都会创建一个shell，并且会在执行完成之后通过通过callback一次性把stdout以及stderr返回出来
+
+spawn和fork的执行会返回一个流，并且在父子进程之间能够通过 process.on  process.send来进行父子通信
+
+其中fork以及execFile通常用来执行一个文件
+
+execexecFile 适合用在一些需要直接拿到结果 并且占用内存小的一些创建子进程方法。例如执行shell命令
+
+spawn fork适用于一些占用内存小，并且需要预先获取流数据并且处理的场景。 例如图片的加载压缩等
